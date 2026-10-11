@@ -32,8 +32,11 @@ activated=false
 cleanup() {
   status=$?
   if [[ $status -ne 0 && $activated == true && -n $previous ]]; then
-    ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$previous' '$site_root/current.recovery'; mv -Tf '$site_root/current.recovery' '$site_root/current'" || true
-    echo "Deployment failed; restored $previous" >&2
+    if ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$previous' '$site_root/current.recovery'; mv -Tf '$site_root/current.recovery' '$site_root/current'"; then
+      echo "Deployment failed; restored $previous" >&2
+    else
+      echo 'Deployment and automatic rollback failed; inspect the current release before retrying.' >&2
+    fi
   fi
   ssh "${ssh_args[@]}" "$target" "rmdir '$site_root/.deploy-lock'" || true
 }

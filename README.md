@@ -24,6 +24,10 @@ Operational documentation and real inventory belong outside Git in
 `~/Website-LocalDocs/`. Infrastructure examples contain no real inventory.
 See `AGENTS.md` for contribution and review requirements.
 
+With the preview running, `npm run screenshots` saves dark/light screenshots at
+390/768/1440px exclusively to the existing private documentation directory.
+This command is local-only and deliberately refuses to run in CI.
+
 Release safety tests use a simulated transport and do not certify live SSH,
 HTTP/TLS, or a host rollback. CI deployment is intentionally disabled until
 dedicated CI credentials, verified host keys, and the release branch are set.

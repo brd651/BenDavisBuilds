@@ -58,7 +58,9 @@
         force: false
       delegate_to: localhost
       become: false
-      when: original_config.stat.exists
+      when:
+        - original_config.stat.exists
+        - (original_content.content | b64decode) != lookup('template', 'templates/Caddyfile.j2')
       no_log: true
   tasks:
     - name: Verify the existing deployment account

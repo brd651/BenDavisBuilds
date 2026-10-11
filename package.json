@@ -15,6 +15,7 @@
     "test": "npm run test:release && npm run test:browser",
     "test:release": "python3 scripts/test-release.py",
     "test:browser": "playwright test",
+    "screenshots": "node scripts/screenshots.mjs",
     "validate:tokens": "python3 built_signal_v1/verification/check_tokens.py",
     "validate:budget": "node scripts/check-js-budget.mjs",
     "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test"

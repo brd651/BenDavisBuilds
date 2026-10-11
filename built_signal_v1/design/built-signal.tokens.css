@@ -1,0 +1,59 @@
+/* Built Signal — generated from design/built-signal.tokens.json.
+   Dark mode is the owner-chosen default; System only if explicitly selected.
+   Do not edit these colors independently of the canonical JSON. */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --bs-page: #0B1623;
+  --bs-surface: #1E2A3A;
+  --bs-raised: #25364A;
+  --bs-text: #F5F3EA;
+  --bs-muted: #C3CEDA;
+  --bs-border: #8195AC;
+  --bs-line: #4A5362;
+  --bs-action: #F5F3EA;
+  --bs-onAction: #0B1623;
+  --bs-accentText: #FFAD68;
+  --bs-focus: #9AC7FF;
+  --bs-scarlet: #E54855;
+  --bs-brass: #B89B5E;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bs-page: #F5F3EA;
+  --bs-surface: #EEEAE1;
+  --bs-raised: #E6E0D4;
+  --bs-text: #152334;
+  --bs-muted: #465468;
+  --bs-border: #6C7885;
+  --bs-line: #C6C0B5;
+  --bs-action: #192C49;
+  --bs-onAction: #F5F3EA;
+  --bs-accentText: #9F4606;
+  --bs-focus: #194B9A;
+  --bs-scarlet: #A32026;
+  --bs-brass: #B89B5E;
+}
+
+/* Optional explicit system behavior */
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    color-scheme: light;
+    --bs-page: #F5F3EA;
+    --bs-surface: #EEEAE1;
+    --bs-raised: #E6E0D4;
+    --bs-text: #152334;
+    --bs-muted: #465468;
+    --bs-border: #6C7885;
+    --bs-line: #C6C0B5;
+    --bs-action: #192C49;
+    --bs-onAction: #F5F3EA;
+    --bs-accentText: #9F4606;
+    --bs-focus: #194B9A;
+    --bs-scarlet: #A32026;
+    --bs-brass: #B89B5E;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] { color-scheme: dark; }
+}

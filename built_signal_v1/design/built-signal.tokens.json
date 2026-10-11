@@ -1,0 +1,65 @@
+{
+  "name": "Built Signal \u2014 Ben Davis Builds",
+  "version": "1.0.0",
+  "authority": "reference/APPROVED_Built_Signal_Board.png",
+  "status": "interpreted semantic production tokens anchored to approved raster; owner review required for implementation",
+  "themeDefault": "dark",
+  "acceptedModes": [
+    "dark",
+    "light",
+    "system"
+  ],
+  "referenceSwatches": {
+    "navy": "#0B1623",
+    "slate": "#1E2A3A",
+    "ivory": "#F5F3EA",
+    "brass": "#B89B5E",
+    "scarlet": "#A32026"
+  },
+  "optionalHistoricalAccent": {
+    "classicEmber": "#E87722",
+    "usage": "Decorative only with express scope; not in logo or favicon"
+  },
+  "light": {
+    "page": "#F5F3EA",
+    "surface": "#EEEAE1",
+    "raised": "#E6E0D4",
+    "text": "#152334",
+    "muted": "#465468",
+    "border": "#6C7885",
+    "line": "#C6C0B5",
+    "action": "#192C49",
+    "onAction": "#F5F3EA",
+    "accentText": "#9F4606",
+    "focus": "#194B9A",
+    "scarlet": "#A32026",
+    "brass": "#B89B5E"
+  },
+  "dark": {
+    "page": "#0B1623",
+    "surface": "#1E2A3A",
+    "raised": "#25364A",
+    "text": "#F5F3EA",
+    "muted": "#C3CEDA",
+    "border": "#8195AC",
+    "line": "#4A5362",
+    "action": "#F5F3EA",
+    "onAction": "#0B1623",
+    "accentText": "#FFAD68",
+    "focus": "#9AC7FF",
+    "scarlet": "#E54855",
+    "brass": "#B89B5E"
+  },
+  "logo": {
+    "internalSignalWire": false,
+    "internalNodes": false,
+    "scarletStripe": "vertical immediately adjacent to left of monogram",
+    "vectorStatus": "unapproved until owner reviews reference comparison"
+  },
+  "notes": [
+    "The approved reference board shows five palette swatches and a clean wire-free monogram.",
+    "Some semantic colors are authored accessible companions and are not the exact swatches printed on the raster.",
+    "Scarlet is decorative identity, not an error-status semantic token.",
+    "Do not assume the image's tiny labels, copy or placeholder dates are production truth."
+  ]
+}

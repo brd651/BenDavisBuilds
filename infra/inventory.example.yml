@@ -1,0 +1,9 @@
+all:
+  children:
+    website:
+      hosts:
+        development:
+          ansible_host: 192.0.2.10
+          ansible_user: administrator
+          # Use a private local inventory and verified known_hosts file.
+          # Supply ansible_ssh_private_key_file locally; never commit keys.

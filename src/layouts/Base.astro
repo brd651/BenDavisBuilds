@@ -1,0 +1,68 @@
+---
+import '../styles/site.css';
+interface Props { title: string; description?: string }
+const { title, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
+const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
+const nav = [['/', 'Home'], ['/about/', 'About'], ['/writing/', 'Writing'], ['/projects/', 'Projects'], ['/mentorship/', 'Mentorship'], ['/contact/', 'Contact']];
+const path = Astro.url.pathname;
+const canonical = new URL(path, Astro.site);
+---
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · Ben Davis Builds</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <link rel="canonical" href={canonical} />
+    <script is:inline>
+      (() => {
+        let preference = 'dark';
+        try { const saved = localStorage.getItem('built-signal-theme'); if (['dark', 'light', 'system'].includes(saved)) preference = saved; } catch {}
+        document.documentElement.dataset.themePreference = preference;
+        document.documentElement.dataset.theme = preference === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : preference;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="development-notice"><span class="notice-label">Development preview</span><span>Sample content · design in progress</span></div>
+    <header class="site-header shell">
+      <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><span>Ben Davis<span class="brand-stripe" aria-hidden="true"></span></span><small>BEN DAVIS BUILDS</small></a>
+      <nav aria-label="Main navigation"><ul>{nav.map(([href, label]) => <li><a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href!)) ? 'page' : undefined}>{label}</a></li>)}</ul></nav>
+      <div class="theme-control" hidden>
+        <label for="theme-mode">Appearance</label>
+        <select id="theme-mode"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
+      </div>
+    </header>
+    <main id="main" class="shell" tabindex="-1"><slot /></main>
+    <footer class="site-footer shell">
+      <div><strong>Ben Davis Builds</strong><p>A Built Signal development template.</p></div>
+      <nav aria-label="Footer navigation"><a href="/writing/archive/">Archive</a><a href="/lab/">Simulated lab</a><a href="/contact/">Contact</a></nav>
+      <p class="fine-print">Provisional text wordmark · all prose and projects are samples.</p>
+    </footer>
+    <script>
+      const selector = document.querySelector<HTMLSelectElement>('#theme-mode');
+      const control = document.querySelector<HTMLElement>('.theme-control');
+      const media = window.matchMedia('(prefers-color-scheme: light)');
+      type Theme = 'dark' | 'light' | 'system';
+      let preference = (document.documentElement.dataset.themePreference || 'dark') as Theme;
+      function applyTheme() {
+        document.documentElement.dataset.theme = preference === 'system' ? (media.matches ? 'light' : 'dark') : preference;
+        document.documentElement.dataset.themePreference = preference;
+        if (selector) selector.value = preference;
+      }
+      if (selector && control) {
+        applyTheme();
+        control.hidden = false;
+        selector.addEventListener('change', () => {
+          preference = selector.value as Theme;
+          try { localStorage.setItem('built-signal-theme', preference); } catch {}
+          applyTheme();
+        });
+        media.addEventListener('change', () => { if (preference === 'system') applyTheme(); });
+      }
+    </script>
+  </body>
+</html>

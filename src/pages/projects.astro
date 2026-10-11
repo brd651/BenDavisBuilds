@@ -1,0 +1,7 @@
+---
+import { getCollection, render } from 'astro:content';
+import Page from '../layouts/Page.astro';
+const entries = await getCollection('projects');
+const rendered = await Promise.all(entries.map(async entry => ({ entry, ...await render(entry) })));
+---
+<Page title="Ideas, taking shape." intro="Sample project content. No real delivery, client, or measured result is claimed.">{rendered.map(({entry, Content}) => <article class="card project-card"><p class="eyebrow">{entry.data.category} · sample</p><h2>{entry.data.title}</h2><p>{entry.data.description}</p><Content /></article>)}<div class="section-link"><a class="button" href="/lab/">Explore the simulated lab →</a></div></Page>

@@ -1,0 +1,180 @@
+---
+- name: Configure a static development website on the existing Ubuntu host
+  hosts: website
+  become: true
+  gather_facts: true
+  pre_tasks:
+    - name: Require supported configuration and explicit DNS readiness
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Ubuntu'
+          - deploy_user is defined
+          - deploy_user != 'root'
+          - deploy_user != 'caddy'
+          - site_root is match('^/srv/[a-zA-Z0-9_-]+$')
+          - site_domain is match('^[a-zA-Z0-9.-]+$')
+          - https_ready is defined
+          - https_ready is boolean
+          - www_ready is defined
+          - www_ready is boolean
+          - preview_address is defined
+          - preview_address is match('^http://[a-zA-Z0-9.-]+(:[0-9]{1,5})?$')
+        fail_msg: Use a verified private inventory/variables file. DNS readiness must be checked before enabling HTTPS.
+    - name: Check private controller documentation location
+      ansible.builtin.stat:
+        path: "{{ local_docs_dir }}"
+      delegate_to: localhost
+      become: false
+      register: local_docs
+    - name: Require the private directory outside the source tree
+      ansible.builtin.assert:
+        that:
+          - local_docs.stat.isdir | default(false)
+          - not (local_docs.stat.islnk | default(false))
+          - local_docs_dir is not match('^' + (playbook_dir | dirname) + '(/|$)')
+        fail_msg: Create the writable private documentation directory outside Git before provisioning.
+    - name: Create private controller backups directory
+      ansible.builtin.file:
+        path: "{{ local_docs_dir }}/backups"
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+    - name: Inspect existing Caddy configuration
+      ansible.builtin.stat:
+        path: /etc/caddy/Caddyfile
+      register: original_config
+    - name: Read existing Caddy configuration for private backup
+      ansible.builtin.slurp:
+        src: /etc/caddy/Caddyfile
+      register: original_content
+      when: original_config.stat.exists
+      no_log: true
+    - name: Save existing configuration privately on the controller
+      ansible.builtin.copy:
+        content: "{{ original_content.content | b64decode }}"
+        dest: "{{ local_docs_dir }}/backups/Caddyfile-{{ original_config.stat.checksum }}"
+        mode: '0600'
+        force: false
+      delegate_to: localhost
+      become: false
+      when: original_config.stat.exists
+      no_log: true
+  tasks:
+    - name: Verify the existing deployment account
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ deploy_user }}"
+    - name: Install supported package prerequisites
+      ansible.builtin.apt:
+        name: [debian-keyring, debian-archive-keyring, apt-transport-https, ca-certificates, curl, gnupg, rsync]
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+    - name: Download official Caddy stable signing key
+      ansible.builtin.get_url:
+        url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+        dest: /usr/share/keyrings/caddy-stable.asc
+        mode: '0644'
+      register: caddy_key
+    - name: Inspect the compiled signing key
+      ansible.builtin.stat:
+        path: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+      register: compiled_caddy_key
+    - name: Compile the Caddy signing key when changed or missing
+      ansible.builtin.command:
+        argv: [gpg, --batch, --yes, --dearmor, -o, /usr/share/keyrings/caddy-stable-archive-keyring.gpg, /usr/share/keyrings/caddy-stable.asc]
+      when: caddy_key.changed or not compiled_caddy_key.stat.exists
+    - name: Ensure package key is readable
+      ansible.builtin.file:
+        path: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        mode: '0644'
+    - name: Configure the official Caddy stable package source
+      ansible.builtin.get_url:
+        url: https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt
+        dest: /etc/apt/sources.list.d/caddy-stable.list
+        mode: '0644'
+      register: caddy_repository
+    - name: Install Caddy without automatically starting a default site
+      ansible.builtin.apt:
+        name: caddy
+        state: present
+        update_cache: "{{ caddy_repository.changed }}"
+        policy_rc_d: 101
+    - name: Create limited deployment directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+      loop:
+        - "{{ site_root }}"
+        - "{{ site_root }}/releases"
+    - name: Create known-good bootstrap release
+      ansible.builtin.file:
+        path: "{{ site_root }}/releases/bootstrap"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+    - name: Install static bootstrap pages
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ site_root }}/releases/bootstrap/{{ item.name }}"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0644'
+      loop:
+        - name: index.html
+          content: '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>Development bootstrap</title><h1>Development bootstrap</h1><p>Static rollback placeholder. No production content.</p></html>'
+        - name: 404.html
+          content: '<!doctype html><html lang="en"><meta charset="utf-8"><title>Not found</title><h1>404 / Page not found</h1></html>'
+        - name: health.txt
+          content: "bootstrap\n"
+    - name: Inspect current release without following symlinks
+      ansible.builtin.stat:
+        path: "{{ site_root }}/current"
+        follow: false
+      register: current_release
+    - name: Set the initial current link only when absent
+      ansible.builtin.file:
+        src: "{{ site_root }}/releases/bootstrap"
+        dest: "{{ site_root }}/current"
+        state: link
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+      when: not current_release.stat.exists and not (current_release.stat.islnk | default(false))
+    - name: Give Caddy private bounded log storage
+      ansible.builtin.file:
+        path: /var/log/caddy
+        state: directory
+        owner: caddy
+        group: caddy
+        mode: '0750'
+    - name: Install the reviewed and validated static Caddy configuration
+      ansible.builtin.template:
+        src: templates/Caddyfile.j2
+        dest: /etc/caddy/Caddyfile
+        owner: root
+        group: caddy
+        mode: '0640'
+        validate: '/usr/bin/caddy validate --config %s --adapter caddyfile'
+      notify: Reload Caddy
+    - name: Ensure Caddy is enabled and running under its packaged service account
+      ansible.builtin.systemd_service:
+        name: caddy
+        enabled: true
+        state: started
+    - name: Apply validated reload before checking service
+      ansible.builtin.meta: flush_handlers
+    - name: Verify Caddy uses its unprivileged service user
+      ansible.builtin.command: systemctl show caddy --property=User --value
+      register: caddy_service_user
+      changed_when: false
+      failed_when: caddy_service_user.stdout != 'caddy'
+  handlers:
+    - name: Reload Caddy
+      ansible.builtin.systemd_service:
+        name: caddy
+        state: reloaded

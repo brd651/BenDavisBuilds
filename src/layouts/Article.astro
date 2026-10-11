@@ -1,0 +1,12 @@
+---
+import Base from './Base.astro';
+interface Props { title: string; description: string; category: string }
+const { title, description, category } = Astro.props;
+---
+<Base title={title} description={description}>
+  <article class="reading-page">
+    <header class="page-heading"><a class="back-link" href="/writing/">← All writing</a><p class="eyebrow">{category} · placeholder</p><h1>{title}</h1><p class="lead">{description}</p></header>
+    <div class="sample-note">Sample content. This page demonstrates the reading layout; it is not a published article.</div>
+    <div class="prose"><slot /></div>
+  </article>
+</Base>

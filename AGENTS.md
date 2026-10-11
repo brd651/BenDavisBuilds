@@ -2,12 +2,35 @@
 
 This file governs coding agents working in the **Ben Davis Builds** website repository. Follow it on every task. Keep implementation practical, fast, testable, and documented. Do not add tools, frameworks, services, or process overhead without a concrete requirement.
 
+## Current development milestone authorization
+
+The owner authorizes routine tool installation, configuration, tests, commits,
+pushes, and deployment of the initial **DEVELOPMENT** static template to the
+existing VPS without another approval request. Content is clearly labeled sample
+Lorem Ipsum; this is not a production launch. This narrow authorization overrides
+older development dependency/deployment approval gates and the CI-only initial
+deployment requirement. Build locally first; do not compile on the VPS.
+
+Independent review remains required before significant commits, server changes,
+and deployment. Final logo approval, credentials, destructive actions, DNS,
+unrelated services, cloud resources, and recurring costs retain their safeguards.
+Do not expand Codex sudo privileges or change tool permission settings. Network
+hardening is out of scope; preserve existing SSH and recovery access.
+
+Operational documentation, inventories, host variables, logs, reports, screenshots,
+and private backups belong exclusively in `~/Website-LocalDocs/`, outside Git.
+Never symlink that directory into the repository, publish it, or relocate its
+contents into Git when access is blocked. Public source contains only application
+code, approved assets/tokens, tests, sanitized infrastructure/workflows, and
+minimal contributor instructions. Record blocked operations honestly and
+continue independent work.
+
 ## 1. Project and authority
 
 - Production domain: `bendavisbuilds.com` (canonical); `www` redirects to apex when DNS/HTTPS is ready.
-- Public GitHub repository: authoritative source for application, approved public assets/content, tests, deployment definitions, and documentation. Determine its actual remote; **never invent a repository URL**.
+- Public GitHub repository: authoritative source for application, approved public assets/content, tests, and sanitized deployment definitions. Operational documentation is local-only. Determine its actual remote; **never invent a repository URL**.
 - Development workspace: **WSL Ubuntu `~/Website`**. Git commits, development, builds, and tests happen here or in GitHub Actions.
-- Production: existing **Akamai/Linode Ubuntu VPS**, `69.164.196.183`, accessed as `codex` over already-verified SSH. Do not create another server. The VPS serves **versioned compiled static artifacts**, not the source development environment.
+- Hosting: existing **Akamai/Linode Ubuntu VPS**, accessed as the limited deployment account over verified SSH; actual inventory is local-only. Do not create another server. The VPS serves **versioned compiled static artifacts**, not the source development environment.
 - Repository is **PUBLIC**. Treat everything staged for commit as internet-visible.
 
 Read existing files and current live state before acting. A command or file mentioned here describes intent, not proof that it currently exists.

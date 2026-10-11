@@ -1,0 +1,51 @@
+name: Deploy development artifact
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: development-deployment
+  cancel-in-progress: false
+jobs:
+  deploy:
+    # Intentionally disabled until dedicated CI credentials and verified host keys exist.
+    if: ${{ vars.DEVELOPMENT_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' }}
+    environment: development
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.19.0
+      - run: npm ci
+      - run: npm run validate:tokens
+      - run: npm run check
+      - run: npm run build
+      - run: npm run validate:budget
+      - run: npm run test:release
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - name: Deploy only the compiled artifact
+        env:
+          CI_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          CI_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          key="$RUNNER_TEMP/deployment-key"
+          hosts="$RUNNER_TEMP/deployment-known-hosts"
+          trap 'rm -f "$key" "$hosts"' EXIT
+          printf '%s\n' "$CI_KEY" > "$key"
+          printf '%s\n' "$CI_KNOWN_HOSTS" > "$hosts"
+          export DEPLOY_KEY="$key" DEPLOY_KNOWN_HOSTS="$hosts"
+          export RELEASE_ID="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${GITHUB_SHA:0:12}"
+          bash scripts/deploy.sh dist

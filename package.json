@@ -1,0 +1,33 @@
+{
+  "name": "built-signal-development",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.21.0",
+    "npm": "11.19.0"
+  },
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "check": "astro check",
+    "build": "astro build",
+    "preview": "astro preview --host 127.0.0.1",
+    "test": "npm run test:release && npm run test:browser",
+    "test:release": "python3 scripts/test-release.py",
+    "test:browser": "playwright test",
+    "validate:tokens": "python3 built_signal_v1/verification/check_tokens.py",
+    "validate:budget": "node scripts/check-js-budget.mjs",
+    "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test"
+  },
+  "dependencies": {
+    "astro": "7.3.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.64.0",
+    "typescript": "5.9.3",
+    "@types/node": "24.19.2"
+  },
+  "packageManager": "npm@11.19.0"
+}

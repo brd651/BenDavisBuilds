@@ -1,0 +1,29 @@
+name: Static development checks
+on:
+  push:
+    branches: [main, master, 'feat/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.19.0
+      - run: npm ci
+      - run: npm run validate:tokens
+      - run: npm run check
+      - run: npm run build
+      - run: npm run validate:budget
+      - run: npm run test:release
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

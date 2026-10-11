@@ -1,0 +1,9 @@
+---
+import Base from './Base.astro';
+interface Props { title: string; intro: string; eyebrow?: string }
+const { title, intro, eyebrow = 'Built Signal / development' } = Astro.props;
+---
+<Base title={title} description={intro}>
+  <header class="page-heading"><p class="eyebrow">{eyebrow}</p><h1>{title}</h1><p class="lead">{intro}</p></header>
+  <div class="page-content"><slot /></div>
+</Base>

@@ -1,0 +1,17 @@
+/.ssh/
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+.tools/
+.local/
+*.log
+*:Zone.Identifier
+public-server-hardening.sh
+ben_davis_gmail_signature_*.html
+dress_blues_ember_design_kit_v1/
+built_signal_v1/agents/CODEX_KICKOFF_PROMPT.md

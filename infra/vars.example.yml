@@ -1,0 +1,8 @@
+# Copy into local-only documentation and replace with verified values.
+deploy_user: deploy
+site_root: /srv/bendavisbuilds
+site_domain: example.com
+https_ready: false
+www_ready: false
+preview_address: http://192.0.2.10
+local_docs_dir: "{{ lookup('env', 'HOME') }}/Website-LocalDocs"

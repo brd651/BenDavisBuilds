@@ -90,6 +90,15 @@ class Releases(unittest.TestCase):
         self.assertEqual((self.remote / 'current/health.txt').read_text().strip(), 'bootstrap')
         self.assertFalse((self.remote / '.deploy-lock').exists())
 
+    def test_rollback_rejects_health_marker_without_a_page(self):
+        incomplete = self.remote / 'releases/incomplete'
+        incomplete.mkdir()
+        (incomplete / 'health.txt').write_text('incomplete\n')
+        result = self.run_script('rollback.sh', 'incomplete')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((self.remote / 'current/health.txt').read_text().strip(), 'bootstrap')
+        self.assertFalse((self.remote / '.deploy-lock').exists())
+
     def test_source_and_symlinks_are_rejected_before_transfer(self):
         (self.artifact / 'private-link').symlink_to(self.base / 'key')
         self.assertNotEqual(self.run_script('deploy.sh', str(self.artifact)).returncode, 0)

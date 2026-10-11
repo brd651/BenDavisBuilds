@@ -18,16 +18,16 @@ activated=false
 cleanup() {
   status=$?
   if [[ $status -ne 0 && $activated == true && -n $previous ]]; then
-    ssh "${ssh_args[@]}" "$target" "ln -s '$previous' '$root/current.recovery'; mv -Tf '$root/current.recovery' '$root/current'" || true
+    ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$previous' '$root/current.recovery'; mv -Tf '$root/current.recovery' '$root/current'" || true
   fi
   ssh "${ssh_args[@]}" "$target" "rmdir '$root/.deploy-lock'" || true
 }
 trap cleanup EXIT
 previous=$(ssh "${ssh_args[@]}" "$target" "readlink '$root/current'")
 [[ $previous =~ ^$root/releases/[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$ ]]
-ssh "${ssh_args[@]}" "$target" "test -s '$root/releases/$release/index.html'; test -s '$root/releases/$release/health.txt'"
+ssh "${ssh_args[@]}" "$target" "set -eu; test -s '$root/releases/$release/index.html'; test -s '$root/releases/$release/health.txt'"
 activated=true
-ssh "${ssh_args[@]}" "$target" "ln -s '$root/releases/$release' '$root/current.next'; mv -Tf '$root/current.next' '$root/current'"
+ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$root/releases/$release' '$root/current.next'; mv -Tf '$root/current.next' '$root/current'"
 [[ $(curl --fail --silent --show-error --max-time 15 "${DEPLOY_HEALTH_URL%/}/health.txt") == "$release" ]]
 [[ $(curl --silent --show-error --max-time 15 --output /dev/null --write-out '%{http_code}' "${DEPLOY_HEALTH_URL%/}/") == 200 ]]
 echo "Verified rollback to $release"

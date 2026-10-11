@@ -32,7 +32,7 @@ activated=false
 cleanup() {
   status=$?
   if [[ $status -ne 0 && $activated == true && -n $previous ]]; then
-    ssh "${ssh_args[@]}" "$target" "ln -s '$previous' '$site_root/current.recovery'; mv -Tf '$site_root/current.recovery' '$site_root/current'" || true
+    ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$previous' '$site_root/current.recovery'; mv -Tf '$site_root/current.recovery' '$site_root/current'" || true
     echo "Deployment failed; restored $previous" >&2
   fi
   ssh "${ssh_args[@]}" "$target" "rmdir '$site_root/.deploy-lock'" || true
@@ -43,12 +43,12 @@ previous=$(ssh "${ssh_args[@]}" "$target" "readlink '$site_root/current'")
 ssh "${ssh_args[@]}" "$target" "mkdir '$site_root/releases/$release'"
 printf -v rsync_ssh '%q ' ssh "${ssh_args[@]}"
 rsync --archive --no-owner --no-group --chmod=D755,F644 -e "$rsync_ssh" "$artifact/" "$target:$site_root/releases/$release/"
-ssh "${ssh_args[@]}" "$target" "printf '%s\n' '$release' > '$site_root/releases/$release/health.txt'; test -s '$site_root/releases/$release/index.html'; test -s '$site_root/releases/$release/404.html'"
+ssh "${ssh_args[@]}" "$target" "set -eu; printf '%s\n' '$release' > '$site_root/releases/$release/health.txt'; test -s '$site_root/releases/$release/index.html'; test -s '$site_root/releases/$release/404.html'"
 # Compare all transferred files, ignoring the deliberately changed health marker.
 differences=$(rsync --dry-run --checksum --recursive --itemize-changes --exclude=health.txt -e "$rsync_ssh" "$artifact/" "$target:$site_root/releases/$release/")
 [[ -z $differences ]] || { echo 'Artifact transfer verification failed.' >&2; exit 1; }
 activated=true
-ssh "${ssh_args[@]}" "$target" "ln -s '$site_root/releases/$release' '$site_root/current.next'; mv -Tf '$site_root/current.next' '$site_root/current'"
+ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$site_root/releases/$release' '$site_root/current.next'; mv -Tf '$site_root/current.next' '$site_root/current'"
 base=${DEPLOY_HEALTH_URL%/}
 served=$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --max-time 15 "$base/health.txt")
 [[ $served == "$release" ]]

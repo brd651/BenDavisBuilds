@@ -1,6 +1,7 @@
 ---
 import '../styles/site.css';
 import BrandMark from '../components/BrandMark.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
 import ThemeControl from '../components/ThemeControl.astro';
 import HeroViewport from '../components/HeroViewport.astro';
@@ -55,11 +56,7 @@ const canonical = new URL(path, Astro.site);
     </header>
     {homepageHero && <HeroViewport />}
     <main id="main" class:list={["shell", { "homepage-main": homepageHero }]} tabindex="-1"><slot /></main>
-    <footer class="site-footer shell">
-      <div><strong>Ben Davis Builds</strong><p>People. Systems. Execution. Impact.</p></div>
-      <nav aria-label="Footer navigation"><a href="/writing/archive/">Archive</a><a href="/lab/">Simulated lab</a><a href="/contact/">Contact</a></nav>
-      <p class="fine-print">{sampleContent ? 'Provisional BD identity · all prose and projects are samples.' : 'Provisional BD identity · other pages contain sample content.'}</p>
-    </footer>
+    <SiteFooter sampleContent={sampleContent} />
     <script>
       const control = document.querySelector<HTMLDetailsElement>('.theme-control');
       const trigger = control?.querySelector<HTMLElement>('summary');

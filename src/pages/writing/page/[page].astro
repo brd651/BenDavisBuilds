@@ -1,0 +1,8 @@
+---
+import ContentListing from '../../../components/publishing/ContentListing.astro';
+import { publishedEntries } from '../../../lib/publishing';
+import { pageCount } from '../../../lib/publishing-policy';
+export async function getStaticPaths() { const entries = await publishedEntries('writing'); return Array.from({ length: pageCount(entries.length) - 1 }, (_, i) => ({ params: { page: String(i + 2) }, props: { entries, page: i + 2 } })); }
+const { entries, page } = Astro.props;
+---
+<ContentListing collection="writing" entries={entries} page={page} />

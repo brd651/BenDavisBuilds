@@ -1,0 +1,41 @@
+---
+title: "Demonstration: from Markdown to a static article"
+description: "An MDX sample with a reusable static publishing diagram, a callout, local responsive artwork, syntax-highlighted code, and an optional lazy-loaded example."
+category: Engineering
+tags: [systems, markdown, publishing]
+sample: true
+image: ../../assets/articles/publishing-workflow.png
+imageAlt: "Illustrative publishing flow: editable Markdown passes through validation and becomes static HTML."
+imageCaption: "A static illustration, not live deployment telemetry."
+---
+
+import BuildFlow from '../../components/publishing/BuildFlow.astro';
+import Callout from '../../components/publishing/Callout.astro';
+import ReadingTimeDemo from '../../components/publishing/ReadingTimeDemo.astro';
+
+This is demonstration content. The example describes a publishing pattern and does not claim a customer delivery, a performance result, or historical publication.
+
+## A build-time publishing flow
+
+A Markdown file provides the explanation. The content schema validates metadata, and the static build produces an ordinary HTML document.
+
+<BuildFlow />
+
+## Keep the source small
+
+The following Bash is an illustrative local build command, not a server-side process:
+
+```bash
+npm run check
+npm run build
+```
+
+<Callout title="Static first" kind="note">
+  <p>The diagram and this callout are rendered during the build. Neither needs React, an animation library, or a connection to a private system.</p>
+</Callout>
+
+## Optional interaction, explicit intent
+
+The article explanation remains readable without JavaScript. Opening the optional example below requests its small enhancement module; ordinary Markdown posts do not load it.
+
+<ReadingTimeDemo id="sample-word-count" />

@@ -1,0 +1,10 @@
+---
+import { render } from 'astro:content';
+import Article from '../../layouts/Article.astro';
+import type { ArticleEntry } from '../../lib/publishing';
+interface Props { entry: ArticleEntry }
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+if (headings.some(h => h.depth === 1)) throw new Error(`${entry.collection}/${entry.id}: use ## for article sections; the layout supplies the H1.`);
+---
+<Article entry={entry} headings={headings}><Content /></Article>

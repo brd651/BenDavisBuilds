@@ -1,0 +1,6 @@
+---
+interface Props { headings: { depth: number; slug: string; text: string }[] }
+const headings = Astro.props.headings.filter(h => h.depth >= 2 && h.depth <= 3);
+---
+{headings.length > 0 && <nav class="article-toc" aria-label="In this article"><p class="eyebrow">In this article</p><ol>{headings.map(h => <li class:list={[{ nested: h.depth === 3 }]}><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol></nav>}
+<style>.article-toc { padding-top: 1rem; border-top: 1px solid var(--bs-line); } ol { padding-left: 1.2rem; margin: 0; } li { margin-bottom: .75rem; font-size: .9375rem; } .nested { margin-left: .75rem; } .eyebrow { margin-bottom: 1rem; }</style>

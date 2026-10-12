@@ -5,12 +5,13 @@ import SiteFooter from '../components/SiteFooter.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
 import ThemeControl from '../components/ThemeControl.astro';
 import HeroViewport from '../components/HeroViewport.astro';
-interface Props { title: string; description?: string; homepageHero?: boolean; sampleContent?: boolean; socialMetadata?: boolean }
+interface Props { title: string; description?: string; homepageHero?: boolean; sampleContent?: boolean; socialMetadata?: boolean; articleMetadata?: { publishedAt?: string; updatedAt?: string; author?: string; image?: string; imageAlt?: string } }
 const { title, homepageHero = false, sampleContent = true, socialMetadata = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
 const nav = [['/', 'Home'], ['/about/', 'About'], ['/writing/', 'Writing'], ['/projects/', 'Projects'], ['/mentorship/', 'Mentorship'], ['/contact/', 'Contact']];
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
+const articleMetadata = Astro.props.articleMetadata;
 ---
 <!doctype html>
 <html lang="en" data-theme="dark">
@@ -22,15 +23,28 @@ const canonical = new URL(path, Astro.site);
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <link rel="canonical" href={canonical} />
     {socialMetadata && <>
-      <meta property="og:type" content="website" />
+      <meta property="og:type" content={articleMetadata ? 'article' : 'website'} />
       <meta property="og:title" content={`${title} · Ben Davis Builds`} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonical} />
       <meta property="og:site_name" content="Ben Davis Builds" />
-      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:card" content={articleMetadata?.image ? 'summary_large_image' : 'summary'} />
       <meta name="twitter:title" content={`${title} · Ben Davis Builds`} />
       <meta name="twitter:description" content={description} />
     </>}
+    {articleMetadata && <>
+      <link rel="alternate" type="application/rss+xml" title="Ben Davis Builds" href="/rss.xml" />
+      {articleMetadata.publishedAt && <meta property="article:published_time" content={`${articleMetadata.publishedAt}T00:00:00Z`} />}
+      {articleMetadata.updatedAt && <meta property="article:modified_time" content={`${articleMetadata.updatedAt}T00:00:00Z`} />}
+      {articleMetadata.author && <meta name="author" content={articleMetadata.author} />}
+      {articleMetadata.image && <>
+        <meta property="og:image" content={new URL(articleMetadata.image, Astro.site)} />
+        <meta property="og:image:alt" content={articleMetadata.imageAlt} />
+        <meta name="twitter:image" content={new URL(articleMetadata.image, Astro.site)} />
+        <meta name="twitter:image:alt" content={articleMetadata.imageAlt} />
+      </>}
+    </>}
+    <slot name="head" />
     <link rel="icon" type="image/svg+xml" href="/identity/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/identity/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/identity/favicon-16.png" />

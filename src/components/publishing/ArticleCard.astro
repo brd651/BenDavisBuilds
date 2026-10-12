@@ -1,0 +1,20 @@
+---
+import { articleUrl, collectionNames, formatDate, type ArticleEntry } from '../../lib/publishing';
+import { readingMinutes, taxonomySlug } from '../../lib/publishing-policy';
+interface Props { entry: ArticleEntry; headingLevel?: 2 | 3 }
+const { entry, headingLevel = 2 } = Astro.props;
+const Heading = headingLevel === 3 ? 'h3' : 'h2';
+---
+<article class="article-card">
+  <p class="eyebrow">{collectionNames[entry.collection]}{entry.data.sample && ' / demonstration'}</p>
+  <Heading><a href={articleUrl(entry)}>{entry.data.title}</a></Heading>
+  <p>{entry.data.description}</p>
+  <p class="article-card-meta">{entry.data.publishedAt ? <time datetime={entry.data.publishedAt}>{formatDate(entry.data.publishedAt)}</time> : <span>Undated sample</span>} · {readingMinutes(entry.body ?? '')} min read</p>
+  <a class="article-category" href={`/writing/category/${taxonomySlug(entry.data.category)}/`}>{entry.data.category}</a>
+</article>
+<style>
+.article-card { padding: 1.5rem; border: 1px solid var(--bs-line); background: var(--bs-surface); border-radius: 4px; min-width: 0; }
+h2, h3 { font-size: 1.5rem; line-height: 1.25; margin-bottom: 1rem; } :is(h2,h3) a { text-decoration: none; } :is(h2,h3) a:hover { text-decoration: underline; }
+p { color: var(--bs-muted); } .eyebrow { font-size: .75rem; } .article-card-meta, .article-category { font-size: .875rem; }
+.article-category { color: var(--bs-accentText); } .article-card-meta { margin-block: 1.5rem .5rem; }
+</style>

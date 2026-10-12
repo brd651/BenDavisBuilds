@@ -58,7 +58,7 @@ test('without JavaScript search navigation still works', async ({ browser }) => 
   const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'no-preference' });
   try {
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:4321/');
+    await page.goto('/');
     await page.getByLabel('Search this site').click();
     await expect(page.locator('.homepage-search').getByRole('link', { name: 'Writing', exact: true })).toBeVisible();
     await expect(page.getByLabel('Search pages')).toBeHidden();
@@ -77,7 +77,7 @@ test('homepage reserves appearance-control space while browser utilities load', 
     }).observe({ type: 'layout-shift', buffered: true });
   });
   // Astro inlines these small utilities as modules; delay the actual module bodies.
-  await page.route('http://127.0.0.1:4321/', async route => {
+  await page.route('/', async route => {
     const response = await route.fetch();
     const body = (await response.text()).replace(/<script type="module">([\s\S]*?)<\/script>/g,
       (_, code: string) => `<script type="module">setTimeout(() => {${code}}, 350);</script>`);
@@ -111,7 +111,7 @@ for (const [width, height, density] of [[2560, 1440, 1], [2560, 1320, 1.5], [384
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: density });
     try {
       const page = await context.newPage();
-      await page.goto('http://127.0.0.1:4321/');
+      await page.goto('/');
       const image = page.locator('.hero-background img');
       await image.evaluate(async el => { if (el instanceof HTMLImageElement) await el.decode(); });
       const framing = await image.evaluate(el => {
@@ -264,7 +264,7 @@ test('high-density mobile screens do not download desktop-sized hero encodings',
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: density });
     try {
       const page = await context.newPage();
-      await page.goto('http://127.0.0.1:4321/');
+      await page.goto('/');
       const source = await page.locator('.hero-background img').evaluate(async el => {
         const image = el as HTMLImageElement;
         await image.decode();
@@ -287,7 +287,7 @@ for (const [width, height, density] of polishViewports) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: density });
     try {
       const page = await context.newPage();
-      await page.goto('http://127.0.0.1:4321/');
+      await page.goto('/');
       for (const theme of ['dark', 'light']) {
         await chooseTheme(page, theme);
         const geometry = await page.evaluate(() => {

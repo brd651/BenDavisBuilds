@@ -2,7 +2,8 @@
 title: A place for ideas to take shape
 description: Sample article layout with placeholder prose. This is not a published article.
 sample: true
-category: Sample writing
+category: Writing format
+tags: [markdown, publishing]
 ---
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae sem at

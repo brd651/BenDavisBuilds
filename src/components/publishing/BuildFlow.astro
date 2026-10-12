@@ -1,0 +1,14 @@
+---
+interface Props { caption?: string }
+const { caption = 'Illustrative static publishing flow. This is a diagram, not live system status.' } = Astro.props;
+---
+<figure class="publishing-diagram">
+<svg viewBox="0 0 640 180" role="img" aria-label="Markdown flows into a validated static build, then into HTML served to readers">
+<path d="M160 80H245M395 80H480" class="flow-line" />
+<path d="m232 73 13 7-13 7m235-14 13 7-13 7" class="flow-line" />
+<rect x="10" y="30" width="150" height="100" rx="4" /><rect x="245" y="30" width="150" height="100" rx="4" /><rect x="480" y="30" width="150" height="100" rx="4" />
+<g text-anchor="middle"><text x="85" y="74">Markdown</text><text x="85" y="101">Editable content</text><text x="320" y="74">Astro build</text><text x="320" y="101">Validate + render</text><text x="555" y="74">Static HTML</text><text x="555" y="101">Ready to read</text></g>
+</svg>
+<ol class="flow-steps" aria-label="Publishing flow"><li><strong>Markdown</strong><span>Editable content</span></li><li><strong>Astro build</strong><span>Validate and render</span></li><li><strong>Static HTML</strong><span>Ready to read</span></li></ol>
+<figcaption>{caption}</figcaption></figure>
+<style>.publishing-diagram { margin: 2rem 0; border: 1px solid var(--bs-line); padding: 1rem; background: var(--bs-surface); } svg { display: block; width: 100%; height: auto; } rect { fill: var(--bs-page); stroke: var(--bs-border); } .flow-line { fill: none; stroke: var(--bs-border); stroke-width: 2; } text { fill: var(--bs-text); font: 15px ui-sans-serif,system-ui,sans-serif; } text:nth-child(even) { font-size: 12px; } .flow-steps { display: none; } @media (max-width:500px) { svg { display: none; } .flow-steps { display: block; margin: 0 0 1rem; padding-left: 1.5rem; font-size: 1rem; } li { margin-bottom: 1rem; } li span { display: block; color: var(--bs-muted); font-size: .9375rem; } }</style>

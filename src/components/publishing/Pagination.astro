@@ -1,0 +1,11 @@
+---
+interface Props { base: string; page: number; total: number }
+const { base, page, total } = Astro.props;
+const href = (number: number) => number === 1 ? base : `${base}page/${number}/`;
+---
+{total > 1 && <nav class="pagination" aria-label="Pagination">
+  {page > 1 && <a rel="prev" href={href(page - 1)}>← Previous</a>}
+  <span>Page {page} of {total}</span>
+  {page < total && <a rel="next" href={href(page + 1)}>Next →</a>}
+</nav>}
+<style>.pagination { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin-block: 2.5rem; font-size: .9375rem; } span { color: var(--bs-muted); }</style>

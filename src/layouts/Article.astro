@@ -1,12 +1,50 @@
 ---
 import Base from './Base.astro';
-interface Props { title: string; description: string; category: string }
-const { title, description, category } = Astro.props;
+import { Picture, getImage } from 'astro:assets';
+import TableOfContents from '../components/publishing/TableOfContents.astro';
+import ArchiveNotice from '../components/publishing/ArchiveNotice.astro';
+import ShareLinks from '../components/publishing/ShareLinks.astro';
+import ArticleCard from '../components/publishing/ArticleCard.astro';
+import { articleUrl, collectionBases, collectionNames, formatDate, relatedEntries, type ArticleEntry } from '../lib/publishing';
+import { readingMinutes, taxonomySlug } from '../lib/publishing-policy';
+interface Props { entry: ArticleEntry; headings: { depth: number; slug: string; text: string }[] }
+const { entry, headings } = Astro.props;
+const data = entry.data;
+const related = await relatedEntries(entry);
+const canonical = new URL(articleUrl(entry), Astro.site).href;
+const socialImage = data.image ? await getImage({ src: data.image, width: Math.min(1200, data.image.width), format: 'webp' }) : undefined;
+const widths = data.image ? [...new Set([480, 768, 1120, Math.min(1600, data.image.width)].filter(width => width <= data.image!.width))].sort((a,b)=>a-b) : [];
 ---
-<Base title={title} description={description}>
-  <article class="reading-page">
-    <header class="page-heading"><a class="back-link" href="/writing/">← All writing</a><p class="eyebrow">{category} · placeholder</p><h1>{title}</h1><p class="lead">{description}</p></header>
-    <div class="sample-note">Sample content. This page demonstrates the reading layout; it is not a published article.</div>
-    <div class="prose"><slot /></div>
+<Base title={data.title} description={data.description} sampleContent={data.sample} socialMetadata articleMetadata={{ publishedAt: data.publishedAt, updatedAt: data.updatedAt, author: data.author, image: socialImage?.src, imageAlt: data.imageAlt }}>
+  <article class="publishing-article">
+    <header class="page-heading"><a class="back-link" href={collectionBases[entry.collection]}>← All {collectionNames[entry.collection].toLowerCase()}</a><p class="eyebrow">{data.category}{data.sample && ' / demonstration'}</p><h1>{data.title}</h1><p class="lead">{data.description}</p><p class="article-meta">{data.publishedAt ? <><time datetime={data.publishedAt}>{formatDate(data.publishedAt)}</time> · </> : <span>Undated demonstration · </span>}{readingMinutes(entry.body ?? '')} min read (estimate){data.author && <> · {data.author}</>}{data.updatedAt && <> · Updated <time datetime={data.updatedAt}>{formatDate(data.updatedAt)}</time></>}</p></header>
+    {data.sample && <p class="sample-note"><strong>Demonstration content.</strong> This sample illustrates the publishing system. It does not represent a genuine published article, professional achievement, or historical account.</p>}
+    {entry.collection === 'archive' && <ArchiveNotice sample={data.sample} originalSource={typeof data.originalSource === 'string' ? data.originalSource : undefined} />}
+    {data.image && <figure class="article-image"><Picture src={data.image} alt={data.imageAlt!} widths={widths} formats={['avif','webp']} sizes="(min-width: 1000px) 800px, calc(100vw - 2rem)" loading="eager" decoding="async" />{data.imageCaption && <figcaption>{data.imageCaption}</figcaption>}</figure>}
+    <div class="article-reading-grid"><TableOfContents headings={headings} /><div class="article-prose"><slot /></div></div>
+    <nav class="article-taxonomy" aria-label="Article categories and tags"><a href={`/writing/category/${taxonomySlug(data.category)}/`}>{data.category}</a>{data.tags.map(tag => <a href={`/writing/tag/${taxonomySlug(tag)}/`}>#{tag}</a>)}</nav>
+    <ShareLinks title={data.title} url={canonical} />
+    {related.length > 0 && <section class="related-reading" aria-label="Related articles"><h2>Keep exploring.</h2><div>{related.map(other => <ArticleCard entry={other} headingLevel={3} />)}</div></section>}
   </article>
 </Base>
+<style>
+:global(html:has(.publishing-article)) { scroll-behavior: auto; }
+.publishing-article { max-width: 1120px; margin: 0 auto 5rem; } .page-heading { max-width: 850px; } .article-meta { color: var(--bs-muted); font-size: .875rem; }
+.article-reading-grid { display: grid; grid-template-columns: 230px minmax(0,1fr); gap: 3rem; margin-top: 3rem; align-items: start; }
+.article-prose { min-width: 0; max-width: 65ch; font-size: 1.125rem; line-height: 1.8; }
+.article-prose :global(h2) { font-size: clamp(1.75rem,3vw,2.5rem); margin-top: 2.75rem; } .article-prose :global(h2:first-child) { margin-top: 0; }
+.article-prose :global(h3) { font-size: 1.5rem; margin-top: 2rem; } .article-prose :global([id]) { scroll-margin-top: 2rem; }
+.article-prose :global(blockquote) { margin: 2rem 0; padding: 1.25rem; border-left: 3px solid var(--bs-brass); background: var(--bs-surface); } .article-prose :global(blockquote p:last-child) { margin-bottom: 0; }
+.article-prose :global(img), .article-image :global(img) { max-width: 100%; height: auto; display: block; }
+.article-image { max-width: 800px; margin: 2rem 0 3rem auto; } .article-image figcaption { margin-inline: 0; }
+.article-prose :global(pre) { max-width: 100%; overflow-x: auto; padding: 1.25rem; font-size: .9375rem; border: 1px solid var(--bs-border); line-height: 1.65; }
+.article-prose :global(code) { font-size: .9em; } .article-prose :global(:not(pre) > code) { background: var(--bs-surface); padding: .15rem .3rem; border-radius: 3px; }
+.article-prose :global(.astro-code), .article-prose :global(.astro-code span) { color: var(--shiki-dark); background-color: var(--shiki-dark-bg); }
+:global(html[data-theme="light"]) .article-prose :global(.astro-code), :global(html[data-theme="light"]) .article-prose :global(.astro-code span) { color: var(--shiki-light); background-color: var(--shiki-light-bg); }
+.article-prose :global(table) { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; } .article-prose :global(th), .article-prose :global(td) { border: 1px solid var(--bs-border); padding: .6rem; }
+.article-taxonomy { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 3rem; font-size: .9375rem; color: var(--bs-accentText); }
+.related-reading { margin-top: 3rem; } .related-reading > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
+@media (max-width: 900px) { .article-reading-grid { grid-template-columns: minmax(0,1fr); gap: 2rem; } .article-image { margin-left: 0; } }
+@media (max-width: 650px) { .related-reading > div { grid-template-columns: minmax(0,1fr); } }
+@media (forced-colors: active) { .article-prose :global(pre), .article-prose :global(blockquote) { border-color: CanvasText; } }
+</style>

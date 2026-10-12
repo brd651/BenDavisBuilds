@@ -46,3 +46,18 @@ Beyond the website itself, I'm interested in how technical teams work, how AI ca
 ---
 
 **Ben Davis Builds** · [bendavisbuilds.com](https://bendavisbuilds.com)
+
+
+Markdown publishing uses `src/content/writing/`, `src/content/archive/`, and
+`src/content/projects/`. Lowercase kebab-case `.md` or `.mdx` files create static
+article routes automatically. Use the existing samples as frontmatter examples.
+A genuine published entry requires `title`, `description`, `category`, and
+`publishedAt: "YYYY-MM-DD"`; drafts may omit the date. `tags` is an array.
+Archive entries also require `historical: true`. Demonstrations use `sample: true`
+and do not invent publication dates. `draft: true` and future publication dates
+exclude an entry from routes, listings, search, RSS, sitemap, and related posts.
+Rebuild to publish a scheduled date; this static site has no scheduling service.
+
+Run `npm run verify` before proposing publication. Content acceptance tests add
+temporary fixtures in an isolated copy; they never add fixture articles to the
+public source. Detailed authoring and deployment documentation remains local-only.

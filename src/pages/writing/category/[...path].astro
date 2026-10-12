@@ -1,0 +1,11 @@
+---
+import ContentListing from '../../../components/publishing/ContentListing.astro';
+import { publishedEntries, taxonomies } from '../../../lib/publishing';
+import { pageCount } from '../../../lib/publishing-policy';
+export async function getStaticPaths() {
+  const entries = await publishedEntries();
+  return taxonomies(entries, 'category').flatMap(group => Array.from({ length: pageCount(group.entries.length) }, (_, i) => ({ params: { path: i ? `${group.slug}/page/${i + 1}` : group.slug }, props: { group, page: i + 1 } })));
+}
+const { group, page } = Astro.props;
+---
+<ContentListing title={`Category: ${group.label}`} intro="Browse related writing, historical entries, and projects. Demonstration content is labeled." entries={group.entries} base={`/writing/category/${group.slug}/`} page={page} />

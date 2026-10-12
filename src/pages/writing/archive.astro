@@ -1,7 +1,4 @@
 ---
-import { getCollection, render } from 'astro:content';
-import Page from '../../layouts/Page.astro';
-const entries = await getCollection('archive');
-const rendered = await Promise.all(entries.map(async entry => ({ entry, ...await render(entry) })));
+import ContentListing from '../../components/publishing/ContentListing.astro';
 ---
-<Page title="The archive template." intro="Historical layout sample. No imported posts or invented publication dates."><div class="sample-note">Historical material will be labeled with its original dates and context. Older technical guidance may be obsolete.</div>{rendered.map(({entry, Content}) => <article class="prose archive-entry"><p class="eyebrow">{entry.data.category}</p><h2>{entry.data.title}</h2><Content /></article>)}</Page>
+<ContentListing collection="archive" />

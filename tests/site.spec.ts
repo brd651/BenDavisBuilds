@@ -72,7 +72,7 @@ test('content, navigation and dark theme survive without JavaScript', async ({ b
   const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   for (const route of routes) {
-    await page.goto(`http://127.0.0.1:4321${route}`);
+    await page.goto(route);
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

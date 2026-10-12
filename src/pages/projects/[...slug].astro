@@ -1,0 +1,7 @@
+---
+import PublishedArticle from '../../components/publishing/PublishedArticle.astro';
+import { publishedEntries } from '../../lib/publishing';
+export async function getStaticPaths() { return (await publishedEntries('projects')).map(entry => ({ params: { slug: entry.id }, props: { entry } })); }
+const { entry } = Astro.props;
+---
+<PublishedArticle entry={entry} />

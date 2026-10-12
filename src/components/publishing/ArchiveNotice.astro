@@ -1,0 +1,6 @@
+---
+interface Props { sample: boolean; originalSource?: string }
+const { sample, originalSource } = Astro.props;
+---
+<aside class="sample-note" aria-label="Historical archive notice"><strong>Historical archive{sample && ' / demonstration'}</strong><p>{sample ? 'This is sample material demonstrating an archive notice. It is not a genuine historical article, and no original publication date is claimed.' : 'This article is preserved in its historical context. Products, commands, links, and recommendations may be obsolete; validate current guidance before using them.'}</p>{originalSource && <a href={originalSource} rel="noopener noreferrer" target="_blank">Original source (opens in a new tab)</a>}</aside>
+<style>p { margin: .5rem 0 0; } a { display: inline-block; margin-top: .75rem; }</style>

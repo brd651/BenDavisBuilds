@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import ArticleCard from './ArticleCard.astro';
+import Pagination from './Pagination.astro';
+import { publishedEntries, collectionBases, collectionNames, taxonomies, type ArticleEntry, type PublishingCollection } from '../../lib/publishing';
+import { pageCount, pageEntries } from '../../lib/publishing-policy';
+interface Props { collection?: PublishingCollection; title?: string; intro?: string; entries?: ArticleEntry[]; base?: string; page?: number }
+const { collection = 'writing', page = 1 } = Astro.props;
+const entries = Astro.props.entries ?? await publishedEntries(collection);
+const base = Astro.props.base ?? collectionBases[collection];
+const title = Astro.props.title ?? collectionNames[collection];
+const intro = Astro.props.intro ?? ({ writing: 'Notes on people, systems, and useful work. Demonstration entries show the publishing format.', archive: 'Earlier writing, with its original context. Sample entries are demonstrations, not genuine historical posts.', projects: 'Questions, approaches, and lessons from projects. Demonstrations are labeled; no delivered result is implied.' })[collection];
+const all = await publishedEntries();
+---
+<Base title={`${title}${page > 1 ? ` / Page ${page}` : ''}`} description={intro} sampleContent={entries.length > 0 && entries.every(entry => entry.data.sample)} socialMetadata>
+  <div class="publishing-listing">
+    <header class="page-heading"><p class="eyebrow">Built Signal / {collectionNames[collection]}</p><h1>{title}</h1><p class="lead">{intro}</p></header>
+    <nav class="publishing-tools" aria-label="Publishing sections"><a href="/writing/">Writing</a><a href="/writing/archive/">Historical Archive</a><a href="/projects/">Projects</a><a href="/writing/search/">Search articles</a><a href="/rss.xml">RSS feed</a></nav>
+    {collection === 'archive' && <p class="sample-note">Historical technical guidance can become obsolete. Each entry identifies its original date when known; sample material does not claim a historical publication date.</p>}
+    <nav class="taxonomy-browse" aria-label="Browse categories"><strong>Categories</strong><ul>{taxonomies(all, 'category').map(group => <li><a href={`/writing/category/${group.slug}/`}>{group.label}</a></li>)}</ul></nav>
+    <div class="article-grid">{pageEntries(entries, page).map(entry => <ArticleCard entry={entry} />)}</div>
+    {entries.length === 0 && <p>No articles are published here yet.</p>}
+    <Pagination base={base} page={page} total={pageCount(entries.length)} />
+    <nav class="taxonomy-browse" aria-label="Browse tags"><strong>Tags</strong><ul>{taxonomies(all, 'tags').map(group => <li><a href={`/writing/tag/${group.slug}/`}>{group.label}</a></li>)}</ul></nav>
+    {collection === 'projects' && <p><a class="text-link" href="/lab/">Explore the simulated lab →</a></p>}
+  </div>
+</Base>
+<style>
+.publishing-listing { margin-bottom: 5rem; } .publishing-tools { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; padding-block: 1rem; border-block: 1px solid var(--bs-line); margin-bottom: 2rem; font-size: .9375rem; }
+.article-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1.25rem; } .taxonomy-browse { margin-block: 2rem; font-size: .9375rem; } .taxonomy-browse ul { margin-top: .75rem; } .taxonomy-browse strong { color: var(--bs-muted); }
+@media (max-width: 1000px) { .article-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 650px) { .article-grid { grid-template-columns: minmax(0,1fr); } }
+</style>

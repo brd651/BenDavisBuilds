@@ -1,0 +1,6 @@
+---
+interface Props { title: string; kind?: 'note' | 'caution' | 'example' }
+const { title, kind = 'note' } = Astro.props;
+---
+<aside class="article-callout" aria-label={title}><p class="eyebrow">{kind}</p><strong>{title}</strong><div><slot /></div></aside>
+<style>.article-callout { margin-block: 2rem; padding: 1.5rem; background: var(--bs-surface); border: 1px solid var(--bs-line); border-left: 3px solid var(--bs-brass); } .eyebrow { margin-bottom: .5rem; } div { margin-top: .75rem; } div :global(p:last-child) { margin-bottom: 0; }</style>

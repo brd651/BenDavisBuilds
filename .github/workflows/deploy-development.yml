@@ -27,6 +27,8 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm run validate:budget
+      - run: npm run test:unit
+      - run: npm run test:content
       - run: npm run test:release
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser

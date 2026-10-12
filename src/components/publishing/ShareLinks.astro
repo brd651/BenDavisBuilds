@@ -1,0 +1,6 @@
+---
+interface Props { title: string; url: string }
+const { title, url } = Astro.props;
+---
+<nav class="article-share" aria-label="Share this article"><strong>Share</strong><a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">LinkedIn (opens in a new tab)</a><a href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${title}\n${url}`)}`}>Email</a><a href={url}>Permalink</a></nav>
+<style>.article-share { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-block: 2rem; padding-block: 1.5rem; border-block: 1px solid var(--bs-line); font-size: .875rem; } strong { color: var(--bs-muted); }</style>

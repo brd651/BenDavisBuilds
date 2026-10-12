@@ -15,7 +15,7 @@ const sections = [
   'Does It Scale?',
   'Technical Integrity. Commercial Outcomes.',
   'Coach Up, Not Out',
-  'No Surprises.',
+  'Leader to Leader: No Surprises',
   'What Success Looks Like',
 ];
 
@@ -41,15 +41,25 @@ for (const [width, height] of [[3840, 2160], [2560, 1440], [1920, 1080], [1440, 
         expect(lines[0]!.width).toBeLessThanOrEqual(lines[0]!.available + 1);
       }
       await expect(page.locator('.principle-index li')).toHaveCount(5);
-      await expect(page.locator('.leadership-origin')).toContainText('My leadership began as a U.S. Marine Corps NCO.');
-      await expect(page.locator('.leadership-case dt')).toHaveText(['01Situation', '02Insight', '03Decision', '04Documented outcome']);
+      await expect(page.locator('.leadership-origin')).toContainText('My foundation in leadership began as a noncommissioned officer in the United States Marine Corps.');
+      await expect(page.locator('.leadership-origin')).toContainText(/I don['’]t think military leadership should simply be copied into a business environment\./);
+      await expect(page.locator('.leadership-case dt')).toHaveText(['01Situation', '02What we learned', '03What we did', '04Outcome']);
+      await expect(page.locator('.framework-questions strong')).toHaveText([
+        'Why are we doing this?', 'Are we the right owners?', "What's the full cost?",
+        'What happens when the next customer asks?', 'Is it worth it?',
+      ]);
       expect(await page.locator('.leadership-operating').evaluate(el => getComputedStyle(el).backgroundColor)).toBe(theme === 'light' ? 'rgb(238, 234, 225)' : 'rgb(245, 243, 234)');
-      await expect(page.locator('#coaching')).toContainText('A fair chance to succeed must come with honest feedback and a reasonable timeframe.');
-      await expect(page.locator('.leadership-success')).toContainText(/That, to me, is leadership(?:\.{3}|…)/);
-      await expect(page.locator('.leadership-transparency')).toContainText('I resolve what belongs at my level');
+      await expect(page.locator('#coaching')).toContainText(/A fair opportunity to improve doesn['’]t mean avoiding a difficult decision indefinitely\./);
+      await expect(page.locator('.leadership-success')).toContainText('To me, successful leadership is creating the conditions for people to grow, make sound decisions, and deliver outcomes that continue to work without constant intervention.');
+      await expect(page.locator('.leadership-transparency')).toContainText('keep ownership of the response');
+      await expect(page.locator('.leadership-practice')).toContainText('introduced the Customer Success team');
+      await expect(page.locator('.leadership-practice')).toContainText('developed a Statement of Work');
       expect(await page.locator('.leadership-heading h1').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeLessThanOrEqual(176);
       await expect(page.locator('footer')).not.toContainText('development template');
-      expect(await page.locator('article').innerText()).not.toMatch(/\u2014|Lorem ipsum|placeholder/i);
+      expect(await page.locator('article').innerText()).not.toMatch(/Lorem ipsum|placeholder/i);
+      await expect(page.locator('article details')).toHaveCount(0);
+      expect(await page.locator('.chapter-rest').evaluateAll(elements => elements.every(el => el.textContent?.trim()))).toBe(true);
+      await expect(page.getByText('The deal closed without the additional PoC, and the customer purchased additional Professional Services.', { exact: true })).toHaveCount(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const links = await page.locator('article a[href]').evaluateAll(elements => elements.map(el => el.getAttribute('href')!));
       for (const href of links) {

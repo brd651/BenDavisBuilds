@@ -32,6 +32,8 @@ const contents = [
 </Base>
 
 <style>
+  /* Long editorial anchor jumps stay deterministic during rapid keyboard navigation. */
+  :global(html:has(.leadership-page)) { scroll-behavior: auto; }
   .leadership-page { margin-bottom: 5rem; }
   .leadership-heading { border-top: 1px solid var(--bs-line); padding-block: clamp(2rem, 5vw, 4rem) 2.5rem; }
   .leadership-heading .eyebrow { margin-bottom: 1.5rem; }

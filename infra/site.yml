@@ -154,6 +154,27 @@
         owner: caddy
         group: caddy
         mode: '0750'
+    - name: Create Caddy log files before root configuration validation
+      ansible.builtin.copy:
+        content: ''
+        dest: "/var/log/caddy/{{ item }}"
+        owner: caddy
+        group: caddy
+        mode: '0640'
+        force: false
+      loop:
+        - runtime.log
+        - access.log
+    - name: Ensure existing Caddy logs remain writable by the service
+      ansible.builtin.file:
+        path: "/var/log/caddy/{{ item }}"
+        state: file
+        owner: caddy
+        group: caddy
+        mode: '0640'
+      loop:
+        - runtime.log
+        - access.log
     - name: Install the reviewed and validated static Caddy configuration
       ansible.builtin.template:
         src: templates/Caddyfile.j2

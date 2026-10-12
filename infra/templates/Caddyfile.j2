@@ -20,7 +20,7 @@
 {% if development_noindex | default(true) %}
         X-Robots-Tag "noindex, nofollow"
 {% endif %}
-        Cache-Control "no-cache"
+        ?Cache-Control "no-cache"
     }
     @fingerprinted path_regexp fingerprinted ^/_astro/[^/]+\.[A-Za-z0-9_-]{8,}\.(css|js|woff2|png|webp|avif|svg)$
     header @fingerprinted Cache-Control "public, max-age=31536000, immutable"
@@ -34,6 +34,7 @@
     }
     file_server
     handle_errors 404 {
+        header Cache-Control "no-cache"
         rewrite * /404.html
         file_server {
             status 404

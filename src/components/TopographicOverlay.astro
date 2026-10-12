@@ -1,0 +1,23 @@
+---
+// Twelve stationary contours plus two traveling highlights (14% of visible paths).
+const contours = Array.from({ length: 12 }, (_, index) => {
+  const y = 450 + index * 16;
+  return `M-100 ${y + 55} C30 ${y - 80} 65 ${y - 60} 150 ${y} S270 ${y + 55} 300 ${y - 5} S415 ${y - 120} 500 ${y - 65} S650 ${y + 10} 710 ${y - 55} S900 ${y - 170} 1000 ${y - 105} S1160 ${y - 10} 1320 ${y - 80}`;
+});
+---
+<svg class="topographic-overlay" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+  <g class="contours">{contours.map(d => <path d={d} />)}</g>
+  <g class="highlights">{[3, 8].map(index => <path class="contour-highlight" d={contours[index]} pathLength="1000" />)}</g>
+</svg>
+<style>
+  .topographic-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+  path { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .contours { stroke: var(--bs-border); opacity: .12; }
+  .highlights { stroke: var(--bs-brass); opacity: .16; }
+  .contour-highlight { stroke-dasharray: 32 968; animation: contour-travel 27s linear infinite; }
+  .contour-highlight:nth-child(2) { animation-duration: 33s; animation-delay: -13s; }
+  @keyframes contour-travel { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+  @media (max-width: 700px) { .contours { opacity: .08; } .highlights { opacity: .1; } }
+  @media (prefers-reduced-motion: reduce) { .contour-highlight { animation: none; stroke-dasharray: none; } .highlights { opacity: .08; } }
+  @media (forced-colors: active) { .topographic-overlay { display: none; } }
+</style>

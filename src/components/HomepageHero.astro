@@ -1,0 +1,57 @@
+---
+import Horizon from './Horizon.astro';
+import TopographicOverlay from './TopographicOverlay.astro';
+import tokens from '../../built_signal_v1/design/built-signal.tokens.json';
+// Clean photographic scene is missing. Never use the UI reference as a background.
+const ember = tokens.optionalHistoricalAccent.classicEmber;
+---
+<section class="built-hero" aria-labelledby="hero-heading" style={`--hero-ember: ${ember}`}>
+  <div class="hero-background" aria-hidden="true"><Horizon /></div>
+  <div class="hero-shade" aria-hidden="true"></div>
+  <div class="hero-grid" aria-hidden="true"></div>
+  <TopographicOverlay />
+  <div class="hero-inner shell">
+    <div class="hero-foreground">
+      <h1 id="hero-heading">Systems for a more interesting tomorrow.</h1>
+      <span class="hero-signature" aria-hidden="true"></span>
+      <p class="hero-support">Technical leadership, practical systems, and real-world progress.</p>
+      <div class="button-row"><a class="button primary" href="/writing/">Explore Writing <span aria-hidden="true">→</span></a><a class="button" href="/projects/">View Projects</a></div>
+      <p class="hero-art-status">Temporary landscape illustration · cinematic artwork pending</p>
+    </div>
+    <ul class="hero-hud" aria-label="Built Signal themes"><li>Build</li><li>Secure</li><li>Optimize</li><li>Explore</li></ul>
+    <div class="hero-bottom"><ul class="hero-pillars" aria-label="Built Signal focus"><li>People</li><li>Systems</li><li>Execution</li><li>Impact</li></ul><label class="hero-motion"><input id="hero-motion-pause" type="checkbox" /><span class="motion-label">Pause contour motion</span><span class="motion-reduced">Motion off (system preference)</span></label></div>
+  </div>
+</section>
+<style>
+  .built-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 700px; background: var(--bs-page); border-block: 1px solid var(--bs-line); }
+  .hero-background,.hero-shade,.hero-grid { position: absolute; inset: 0; pointer-events: none; }
+  .hero-background { z-index: 0; }
+  .hero-background :global(.landscape) { z-index: auto; object-position: 70% center; }
+  .hero-background :global(.landscape-sun) { fill: var(--hero-ember); opacity: .45; }
+  .hero-background :global(.landscape-grid) { display: none; }
+  .hero-background::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 79% 48%,color-mix(in srgb,var(--hero-ember) 24%,transparent),transparent 43%); }
+  .hero-shade { z-index: 1; background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 97%,transparent) 32%,color-mix(in srgb,var(--bs-page) 60%,transparent) 56%,transparent 82%); }
+  .hero-grid { z-index: 2; opacity: .08; background-image: linear-gradient(var(--bs-border) 1px,transparent 1px),linear-gradient(90deg,var(--bs-border) 1px,transparent 1px); background-size: 150px 150px; }
+  .hero-inner { position: relative; z-index: 3; min-height: inherit; padding-block: 5.5rem 2rem; display: grid; grid-template-columns: minmax(0,1fr) 190px; grid-template-rows: 1fr auto; gap: 3rem; }
+  .hero-foreground { max-width: 620px; align-self: center; }
+  h1 { max-width: 23ch; font-size: clamp(1.65rem,2.45vw,2.5rem); line-height: 1.7; text-transform: uppercase; letter-spacing: .2em; font-weight: 500; margin-bottom: 1.7rem; text-wrap: balance; }
+  .hero-signature { display: block; width: 3rem; height: 3px; background: var(--bs-scarlet); margin-bottom: 1.6rem; }
+  .hero-support { max-width: 36ch; font-size: clamp(1.125rem,1.7vw,1.55rem); line-height: 1.65; color: var(--bs-text); }
+  .button-row { margin-top: 2.4rem; gap: 1rem; }
+  .button { min-height: 52px; padding: .85rem 1.5rem; font-size: 1rem; background: var(--bs-page); }
+  .button.primary { background: var(--bs-action); }
+  .hero-art-status { color: var(--bs-muted); font-size: .8125rem; margin-top: 1.25rem; }
+  .hero-hud { margin: 0; list-style: none; padding: 1.6rem 1rem; align-self: start; display: grid; gap: 1.1rem; border-inline: 1px solid var(--bs-border); border-block: 1px solid var(--bs-border); border-radius: 12px 2px; text-align: center; text-transform: uppercase; letter-spacing: .22em; font-size: .875rem; }
+  .hero-bottom { grid-column: 1/-1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+  .hero-pillars { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; list-style: none; margin: 0; padding: 0; text-transform: uppercase; letter-spacing: .2em; font-size: .8125rem; }
+  .hero-pillars li+li::before { content: '/'; color: var(--bs-scarlet); margin-right: 1.5rem; }
+  .hero-motion { display: flex; align-items: center; gap: .5rem; color: var(--bs-muted); font-size: .8125rem; cursor: pointer; }
+  .hero-motion input { width: 1.1rem; height: 1.1rem; accent-color: var(--bs-action); flex-shrink: 0; }
+  .motion-reduced { display: none; }
+  .built-hero:has(#hero-motion-pause:checked) :global(.contour-highlight) { animation-play-state: paused; }
+  :global([data-theme="light"]) .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 98%,transparent) 37%,color-mix(in srgb,var(--bs-page) 75%,transparent) 63%,color-mix(in srgb,var(--bs-page) 30%,transparent)); }
+  @media (max-width:1000px) { .hero-inner { grid-template-columns: minmax(0,1fr) 155px; gap: 2rem; padding-top: 4rem; } h1 { letter-spacing: .15em; } .hero-hud { letter-spacing: .15em; } }
+  @media (max-width:700px) { .built-hero { min-height: 640px; } .hero-inner { display: flex; flex-direction: column; justify-content: space-between; padding-block: 3rem 1.5rem; gap: 2rem; } .hero-foreground { width: 100%; } h1 { max-width: 21ch; font-size: 1.65rem; letter-spacing: .12em; line-height: 1.65; } .hero-hud,.hero-grid { display: none; } .hero-support { max-width: 29ch; } .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 92%,transparent) 65%,color-mix(in srgb,var(--bs-page) 65%,transparent)); } .hero-pillars { gap: .5rem .9rem; letter-spacing: .09em; font-size: .75rem; } .hero-pillars li+li::before { margin-right: .9rem; } .hero-bottom { gap: 1.5rem; } }
+  @media (prefers-reduced-motion:reduce) { .hero-motion input,.motion-label { display: none; } .motion-reduced { display: inline; } }
+  @media (forced-colors:active) { .hero-background,.hero-grid,.hero-shade { display: none; } .built-hero { border-color: CanvasText; } }
+</style>

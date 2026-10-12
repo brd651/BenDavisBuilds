@@ -1,0 +1,54 @@
+---
+const pages = [
+  ['Home', '/', 'Built Signal homepage'], ['About', '/about/', 'People, systems, perspective'],
+  ['Writing', '/writing/', 'Notes and sample articles'], ['Sample article', '/writing/sample/', 'Reading layout and sample prose'],
+  ['Archive', '/writing/archive/', 'Historical writing template'], ['Projects', '/projects/', 'Experiments and systems'],
+  ['Lab', '/lab/', 'Simulated static build workflow'], ['Mentorship', '/mentorship/', 'Conversation and learning'],
+  ['Contact', '/contact/', 'Contact development placeholder'],
+];
+---
+<details class="homepage-search">
+  <summary aria-label="Search this site"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg><span class="search-name">Search</span></summary>
+  <div class="search-panel">
+    <div class="search-field" hidden><label for="homepage-query">Search pages</label><input id="homepage-query" type="search" autocomplete="off" placeholder="Writing, projects, people…" /></div>
+    <p class="search-count" role="status">Browse the site’s pages.</p>
+    <ul>{pages.map(([title, href, description]) => <li data-search={`${title} ${description}`}><a href={href}>{title}</a><p>{description}</p></li>)}</ul>
+  </div>
+</details>
+<script>
+  const search = document.querySelector<HTMLDetailsElement>('.homepage-search');
+  const input = search?.querySelector<HTMLInputElement>('input');
+  if (search && input) {
+    const field = search.querySelector<HTMLElement>('.search-field');
+    const count = search.querySelector<HTMLElement>('.search-count');
+    const results = Array.from(search.querySelectorAll<HTMLLIElement>('li[data-search]'));
+    if (field) field.hidden = false;
+    input.addEventListener('input', () => {
+      const words = input.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+      let matches = 0;
+      for (const result of results) {
+        result.hidden = !words.every(word => result.dataset.search?.toLocaleLowerCase().includes(word));
+        if (!result.hidden) matches++;
+      }
+      if (count) count.textContent = `${matches} ${matches === 1 ? 'page' : 'pages'} found.`;
+    });
+    search.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { search.open = false; search.querySelector('summary')?.focus(); }
+    });
+  }
+</script>
+<style>
+  .homepage-search { position: relative; }
+  summary { list-style: none; display: flex; align-items: center; gap: .5rem; cursor: pointer; padding: .6rem; font-size: .875rem; }
+  summary::-webkit-details-marker { display: none; }
+  summary svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .search-panel { position: absolute; right: 0; top: calc(100% + .5rem); width: min(340px,calc(100vw - 2rem)); max-height: 65vh; overflow: auto; padding: 1.3rem; background: var(--bs-page); border: 1px solid var(--bs-border); border-radius: 4px; z-index: 10; }
+  label { display: block; font-weight: 600; margin-bottom: .5rem; }
+  input { width: 100%; min-width: 0; font: inherit; color: var(--bs-text); background: var(--bs-surface); border: 1px solid var(--bs-border); padding: .65rem; border-radius: 3px; }
+  .search-count { font-size: .875rem; color: var(--bs-muted); margin: .75rem 0; }
+  ul { display: block; }
+  li { padding-block: .7rem; border-top: 1px solid var(--bs-line); }
+  li a { font-weight: 650; }
+  li p { font-size: .875rem; color: var(--bs-muted); margin: .2rem 0 0; }
+  @media (max-width: 700px) { .search-name { display: none; } }
+</style>

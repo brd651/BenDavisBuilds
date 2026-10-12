@@ -1,8 +1,9 @@
 ---
 import '../styles/site.css';
 import BrandMark from '../components/BrandMark.astro';
-interface Props { title: string; description?: string }
-const { title, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
+import HomepageSearch from '../components/HomepageSearch.astro';
+interface Props { title: string; description?: string; homepageHero?: boolean }
+const { title, homepageHero = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
 const nav = [['/', 'Home'], ['/about/', 'About'], ['/writing/', 'Writing'], ['/projects/', 'Projects'], ['/mentorship/', 'Mentorship'], ['/contact/', 'Contact']];
 const path = Astro.url.pathname;
@@ -34,15 +35,16 @@ const canonical = new URL(path, Astro.site);
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="development-notice"><span class="notice-label">Development preview</span><span>Sample content · design in progress</span></div>
-    <header class="site-header shell">
+    <header class:list={["site-header", "shell", { "homepage-header": homepageHero }]}>
       <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
       <nav aria-label="Main navigation"><ul>{nav.map(([href, label]) => <li><a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href!)) ? 'page' : undefined}>{label}</a></li>)}</ul></nav>
+      {homepageHero && <HomepageSearch />}
       <div class="theme-control" hidden>
         <label for="theme-mode">Appearance</label>
         <select id="theme-mode"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
       </div>
     </header>
-    <main id="main" class="shell" tabindex="-1"><slot /></main>
+    <main id="main" class:list={["shell", { "homepage-main": homepageHero }]} tabindex="-1"><slot /></main>
     <footer class="site-footer shell">
       <div><strong>Ben Davis Builds</strong><p>A Built Signal development template.</p></div>
       <nav aria-label="Footer navigation"><a href="/writing/archive/">Archive</a><a href="/lab/">Simulated lab</a><a href="/contact/">Contact</a></nav>
@@ -72,3 +74,11 @@ const canonical = new URL(path, Astro.site);
     </script>
   </body>
 </html>
+
+<style>
+  .homepage-main { width: 100%; }
+  .homepage-header { min-height: 112px; gap: 1rem; }
+  .homepage-header :global(.theme-control[hidden]) { display: flex !important; visibility: hidden; }
+  .homepage-header :global(.brand-mark) { width: 3.5rem; }
+  @media (max-width:700px) { .homepage-header { gap: .75rem; } .homepage-header :global(.brand-mark) { width: 2.5rem; } }
+</style>

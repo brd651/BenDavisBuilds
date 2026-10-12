@@ -1,25 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
 import Card from '../components/Card.astro';
-import BrandMark from '../components/BrandMark.astro';
-import Horizon from '../components/Horizon.astro';
+import HomepageHero from '../components/HomepageHero.astro';
 import ProjectArtwork from '../components/ProjectArtwork.astro';
 ---
-<Base title="Built Signal">
-  <section class="signal-hero">
-    <Horizon />
-    <div class="signal-hero-content">
-      <p class="eyebrow signature-label">Built Signal / Ben Davis Builds</p>
-      <div class="hero-identity"><BrandMark /><div><strong>Ben Davis</strong><span>BEN DAVIS BUILDS</span></div></div>
-      <h1>Systems for a more<br /><em>interesting tomorrow.</em></h1>
-      <p class="lead">A development space for ideas about systems, engineering, and people. Sample writing today. Real stories to come.</p>
-      <div class="button-row"><a class="button primary" href="/writing/">Explore sample writing <span aria-hidden="true">→</span></a><a class="button" href="/projects/">View sample projects</a></div>
-      <p class="hero-caption">Illustrative landscape · provisional identity and headline</p>
-    </div>
-    <aside class="hero-principles" aria-label="Themes of the template"><span>Build</span><span>Secure</span><span>Optimize</span><span>Explore</span></aside>
-  </section>
-  <div class="signal-strip"><p>Ideas <span aria-hidden="true">/</span> Systems <span aria-hidden="true">/</span> People</p><p>A little curiosity. Room to build.</p></div>
+<Base title="Built Signal" homepageHero>
+  <HomepageHero />
+  <div class="shell">
   <section class="section"><div class="section-heading"><div><p class="eyebrow">01 / Explore</p><h2>Different paths.<br />The same curiosity.</h2></div><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. A sample home for thoughtful notes, practical experiments, and conversations.</p></div><div class="card-grid"><Card title="Notes from the workbench" description="Lorem ipsum dolor sit amet. Reading-first sample essays on engineering and decisions." href="/writing/sample/" label="01 / Writing · sample"/><Card title="From idea to experiment" description="Consectetur adipiscing elit. Project layouts for questions, approaches, and lessons." href="/projects/" label="02 / Projects · sample"/><Card title="Thinking things through" description="Integer posuere erat a ante. A place for future conversations about growth and direction." href="/mentorship/" label="03 / Mentorship · sample"/></div></section>
   <section class="section"><div class="section-heading"><div><p class="eyebrow">02 / On the workbench</p><h2>A closer look.</h2></div><a class="text-link" href="/projects/">All sample projects →</a></div><div class="feature-grid"><article class="feature-card"><ProjectArtwork /><div class="feature-copy"><p class="eyebrow">Systems / simulated</p><h3>A simple path from idea to artifact.</h3><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Explore the static diagram and its readable explanation.</p><a class="text-link" href="/lab/">Open the simulated lab →</a></div></article><article class="feature-card"><ProjectArtwork variant="notes"/><div class="feature-copy"><p class="eyebrow">Writing / sample</p><h3>Make room for a useful note.</h3><p>Lorem ipsum dolor sit amet. A quiet article layout for context, decisions, and what to try next.</p><a class="text-link" href="/writing/sample/">Read the sample article →</a></div></article></div></section>
   <section class="closing-panel closing-split"><div><p class="eyebrow">03 / The human side</p><h2>Good questions.<br />Better conversations.</h2></div><div><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. This is space for a real story, with no invented career claims.</p><a class="text-link" href="/about/">Behind the development template →</a></div></section>
+  </div>
 </Base>

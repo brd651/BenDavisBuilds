@@ -1,5 +1,6 @@
 ---
 import type { CareerStage } from '../data/career';
+import BrandMark from './BrandMark.astro';
 interface Props { stages: readonly CareerStage[] }
 const { stages } = Astro.props;
 ---
@@ -9,6 +10,11 @@ const { stages } = Astro.props;
       {index < stages.length - 1 && <svg class="timeline-connector" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true"><path d="M1 0 V100" /><path class="connector-progress" d="M1 0 V100" pathLength="1" /></svg>}
       <div class="stage-identity">
         <p class="stage-type">{stage.kind === 'service' ? 'Service' : stage.kind === 'education' ? 'Education' : stage.kind === 'personal' ? 'Ongoing personal project' : 'Career chapter'}</p>
+        {stage.logo && <div class:list={['stage-logo', stage.logo.surface && `logo-${stage.logo.surface}`]} data-theme={stage.logo.surface === 'paper' ? 'light' : stage.logo.surface === 'navy' ? 'dark' : undefined} style={`--logo-width: ${stage.logo.displayWidth}px`}>
+          <img class:list={[{ 'logo-dark': stage.logo.lightSrc }]} src={stage.logo.src} width={stage.logo.width} height={stage.logo.height} loading="lazy" decoding="async" alt={`${stage.organization} logo`} />
+          {stage.logo.lightSrc && <img class="logo-light" src={stage.logo.lightSrc} width={stage.logo.width} height={stage.logo.height} loading="lazy" decoding="async" alt={`${stage.organization} logo`} />}
+        </div>}
+        {stage.kind === 'personal' && <div class="stage-brand"><BrandMark class="timeline-brand-mark" /></div>}
         <p class="stage-organization">{stage.organization}</p>
         <p class="stage-theme">{stage.theme}</p>
       </div>
@@ -16,10 +22,13 @@ const { stages } = Astro.props;
       <div class="stage-story">
         <h3>{stage.role}</h3>
         <p>{stage.summary}</p>
-        <details>
-          <summary>More from this chapter<span class="disclosure-icon" aria-hidden="true">+</span></summary>
-          <div class="stage-detail"><p>{stage.detail}</p></div>
-        </details>
+        {stage.expansion && <details>
+          <summary>{stage.expansion.label}<span class="disclosure-icon" aria-hidden="true">+</span></summary>
+          <div class="stage-detail">
+            {stage.expansion.sections.map(section => <div class="detail-section"><h4>{section.heading}</h4><p>{section.body}</p></div>)}
+            {stage.expansion.related && <a class="chapter-related" href={stage.expansion.related.href}>{stage.expansion.related.label} <span aria-hidden="true">→</span></a>}
+          </div>
+        </details>}
       </div>
     </li>)}
   </ol>
@@ -88,6 +97,15 @@ const { stages } = Astro.props;
   .stage-identity { grid-column: 1; text-align: right; padding-top: .25rem; }
   .stage-type { font-size: .6875rem; text-transform: uppercase; letter-spacing: .15em; color: var(--bs-muted); margin-bottom: .7rem; }
   .stage-organization { font-size: clamp(1.65rem, 3vw, 2.65rem); font-weight: 650; line-height: 1.1; letter-spacing: -.045em; margin-bottom: .9rem; }
+  .stage-logo { width: min(100%, var(--logo-width)); margin: .9rem 0 1rem auto; }
+  .stage-logo img { display: block; width: 100%; height: auto; object-fit: contain; }
+  .logo-paper, .logo-navy { box-sizing: content-box; padding: 1rem; background: var(--bs-page); max-width: calc(100% - 2rem); }
+  .logo-light { display: none !important; }
+  :global(html[data-theme="light"]) .logo-dark { display: none; }
+  :global(html[data-theme="light"]) .logo-light { display: block !important; }
+  .stage-identity:has(.stage-logo) .stage-organization { font-size: 1.15rem; line-height: 1.4; letter-spacing: -.01em; }
+  .stage-brand { display: flex; justify-content: end; margin-bottom: 1rem; }
+  .stage-brand :global(.timeline-brand-mark) { width: 4.5rem; height: auto; }
   .stage-theme { font-size: .875rem; color: var(--bs-muted); margin: 0; }
   .milestone { grid-column: 2; display: grid; place-items: center; position: relative; width: 4rem; height: 4rem; border: 2px solid var(--bs-border); border-radius: 50%; background: var(--bs-page); font-size: .8125rem; font-weight: 650; font-variant-numeric: tabular-nums; z-index: 1; }
   .stage-story { grid-column: 3; padding-top: .2rem; }
@@ -104,7 +122,12 @@ const { stages } = Astro.props;
   summary:hover { text-decoration: underline; text-underline-offset: .2em; }
   .disclosure-icon { font-size: 1.25rem; line-height: 1; }
   details[open] .disclosure-icon { transform: rotate(45deg); }
-  .stage-detail { padding-top: 1rem; }
+  .stage-detail { padding-block: 1.5rem .5rem; }
+  .detail-section + .detail-section { margin-top: 1.5rem; }
+  .detail-section h4 { font-size: .8125rem; line-height: 1.5; font-weight: 650; margin: 0 0 .5rem; }
+  .chapter-related { display: inline-block; font-size: .875rem; margin-top: 1.5rem; }
+  .career-stage:nth-child(even) .stage-logo { margin-inline: 0 auto; }
+  .career-stage:nth-child(even) .stage-brand { justify-content: start; }
   .stage-detail p { margin: 0; }
   [data-motion="true"] .is-seen .milestone { border-color: var(--bs-accentText); background: var(--bs-surface); transition: border-color .45s ease; }
   [data-motion="true"] .is-seen .stage-identity, [data-motion="true"] .is-seen .stage-story { animation: chapter-arrive .6s ease both; }
@@ -118,6 +141,8 @@ const { stages } = Astro.props;
     .stage-story, .career-stage:nth-child(even) .stage-story { grid-column: 2; grid-row: 2; }
     .career-stage:nth-child(even) .milestone { grid-column: 1; }
     .stage-organization { font-size: 1.8rem; }
+    .stage-logo { margin-inline: 0 auto; }
+    .stage-brand { justify-content: start; }
     .stage-story p { font-size: 1rem; }
     .stage-service .stage-organization { border-right: 0; border-left: 3px solid var(--bs-scarlet); padding-right: 0; padding-left: .75rem; }
   }

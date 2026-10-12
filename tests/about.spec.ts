@@ -13,9 +13,28 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     page.on('pageerror', e => errors.push(e.message));
     expect((await page.goto('/about/'))?.status()).toBe(200);
     await expect(page.locator('h1')).toHaveCount(1);
+    await expect(page.locator('h1')).toHaveText('About Ben Davis.');
+    const portrait = page.getByRole('img', { name: 'Professional portrait of Ben Davis' });
+    await expect(portrait).toBeVisible();
+    expect(await portrait.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    const logos = page.locator('.stage-logo img:visible');
+    await expect(logos).toHaveCount(5);
+    for (const logo of await logos.all()) {
+      await logo.scrollIntoViewIfNeeded();
+      await expect.poll(() => logo.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+      const geometry = await logo.evaluate((el: HTMLImageElement) => ({ actual: el.width / el.height, original: el.naturalWidth / el.naturalHeight }));
+      expect(Math.abs(geometry.actual / geometry.original - 1)).toBeLessThan(.02);
+    }
     expect(await page.locator('.stage-organization').allTextContents()).toEqual(organizations);
     await expect(page.locator('.stage-personal .stage-type')).toHaveText('Ongoing personal project');
     expect(await page.locator('.career-stage').count()).toBe(7);
+    await expect(page.locator('.career-stage details')).toHaveCount(3);
+    await expect(page.locator('#marine-corps details, #education details, #western-nrg details, #ben-davis-builds details')).toHaveCount(0);
+    expect(await page.locator('.career-stage summary').allTextContents()).toEqual([
+      'Reproducing failures in the lab+', 'Coaching across regions and teams+', 'Developing teams and technical execution+',
+    ]);
+    await expect(page.locator('#western-nrg .stage-story')).toContainText('reducing repetitive work');
+    await expect(page.locator('#ben-davis-builds .timeline-brand-mark')).toHaveCount(1);
     expect(await page.locator('.timeline-connector').count()).toBe(6);
     expect(await page.locator('article').innerText()).not.toMatch(/(?:19|20)\d{2}|Lorem ipsum|2000|2004|2014/);
     await page.locator('.career-stages').evaluate(el => el.querySelectorAll('details').forEach(detail => detail.open = true));
@@ -63,16 +82,16 @@ test('About keyboard chapters, native disclosures, focus and themes', async ({ p
   await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
   await expect(page.locator('main')).toBeFocused();
-  const link = page.getByRole('link', { name: '04 Western NRG', exact: true });
+  const link = page.getByRole('link', { name: '03 SonicWall', exact: true });
   await link.focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#western-nrg')).toBeFocused();
-  expect(await page.locator('#western-nrg').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
-  await page.locator('#western-nrg summary').focus();
-  expect(await page.locator('#western-nrg summary').evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  await expect(page.locator('#sonicwall')).toBeFocused();
+  expect(await page.locator('#sonicwall').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
+  await page.locator('#sonicwall summary').focus();
+  expect(await page.locator('#sonicwall summary').evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
   await page.keyboard.press('Enter');
-  await expect(page.locator('#western-nrg details')).toHaveAttribute('open', '');
-  await expect(page.locator('#western-nrg .stage-detail')).toBeVisible();
+  await expect(page.locator('#sonicwall details')).toHaveAttribute('open', '');
+  await expect(page.locator('#sonicwall .stage-detail')).toBeVisible();
   await chooseTheme(page, 'light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.reload();
@@ -106,4 +125,31 @@ test('About remains readable when observer APIs are unavailable', async ({ page 
   await expect(page.locator('[data-career-timeline]')).toHaveAttribute('data-motion', 'false');
   await expect(page.locator('#sonicwall .stage-story')).toBeVisible();
   expect(await page.locator('.connector-progress').first().evaluate(el => getComputedStyle(el).strokeDasharray)).toBe('none');
+});
+
+for (const width of [390, 768, 1440, 1920, 3840]) test(`About System mode and local imagery at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('built-signal-theme', 'system'));
+  const external: string[] = [];
+  page.on('request', req => { if (!new URL(req.url()).hostname.match(/^(127\.0\.0\.1|bendavisbuilds\.com)$/)) external.push(req.url()); });
+  await page.goto('/about/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-preference', 'system');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.locator('#palo-alto-networks').scrollIntoViewIfNeeded();
+  await expect(page.locator('#palo-alto-networks .logo-light')).toBeVisible();
+  await expect(page.locator('#palo-alto-networks .logo-dark')).toBeHidden();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('#palo-alto-networks .logo-dark')).toBeVisible();
+  await expect(page.locator('#palo-alto-networks .logo-light')).toBeHidden();
+  const disclosures = page.locator('.career-stage details');
+  for (const disclosure of await disclosures.all()) {
+    await disclosure.locator('summary').click();
+    expect((await disclosure.locator('.stage-detail').innerText()).length).toBeGreaterThan(250);
+    await expect(disclosure.locator('h4').first()).toBeVisible();
+  }
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  expect(external).toEqual([]);
 });

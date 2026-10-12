@@ -26,7 +26,8 @@ test('contours have slow traveling highlights, a pause control and a reduced-mot
   const overlay = page.locator('.topographic-overlay');
   await expect(overlay).toHaveAttribute('aria-hidden', 'true');
   expect(await overlay.evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none');
-  await expect(overlay.locator('path')).toHaveCount(14);
+  await expect(overlay.locator('.contours path')).toHaveCount(14);
+  await expect(overlay.locator('.map-guides, .registration')).toHaveCount(2);
   await expect(overlay.locator('.contour-highlight')).toHaveCount(2);
   const durations = await overlay.locator('.contour-highlight').evaluateAll(paths => paths.map(path => Number.parseFloat(getComputedStyle(path).animationDuration)));
   expect(durations.every(seconds => seconds >= 20 && seconds <= 35)).toBe(true);
@@ -92,4 +93,19 @@ test('homepage reserves appearance-control space while browser utilities load', 
   await expect(page.getByLabel('Appearance')).toBeVisible();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(await page.evaluate(() => window.heroLayoutShift)).toBeLessThan(0.01);
+});
+
+
+test('hero uses responsive artwork and open HUD framing', async ({ page }) => {
+  await page.goto('/');
+  const picture = page.locator('.hero-background picture');
+  await expect(picture.locator('source[type="image/avif"]')).toHaveAttribute('srcset', /640w.*960w.*1280w/);
+  await expect(picture.locator('source[type="image/webp"]')).toHaveAttribute('srcset', /640w.*960w.*1280w/);
+  const image = picture.locator('img');
+  expect(await image.evaluate(el => el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0)).toBe(true);
+  await expect(image).toHaveAttribute('width', '1672');
+  await expect(image).toHaveAttribute('height', '941');
+  expect(await page.locator('.hero-hud').evaluate(el => getComputedStyle(el).borderTopWidth)).toBe('0px');
+  await expect(page.locator('.hero-hud-frame')).toBeVisible();
+  await expect(page.getByText('Temporary landscape illustration', { exact: false })).toHaveCount(0);
 });

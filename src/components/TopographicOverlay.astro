@@ -1,23 +1,47 @@
 ---
-// Twelve stationary contours plus two traveling highlights (14% of visible paths).
-const contours = Array.from({ length: 12 }, (_, index) => {
-  const y = 450 + index * 16;
-  return `M-100 ${y + 55} C30 ${y - 80} 65 ${y - 60} 150 ${y} S270 ${y + 55} 300 ${y - 5} S415 ${y - 120} 500 ${y - 65} S650 ${y + 10} 710 ${y - 55} S900 ${y - 170} 1000 ${y - 105} S1160 ${y - 10} 1320 ${y - 80}`;
-});
+// Independently drawn terrain clusters: closed foothills, angular ridge and valley.
+// Fourteen stationary contours, two highlights and four guide/registration paths.
+const foothills = [
+  'M-25 655C7 607 18 570 64 552C99 538 127 553 143 582C162 615 208 598 231 621C254 641 231 677 197 693C155 712 117 684 79 698C40 714-10 706-25 655Z',
+  'M-5 655C27 628 25 591 67 572C98 558 114 572 129 596C151 631 202 610 213 634C226 659 201 672 176 677C142 686 119 664 83 680C50 695 17 685-5 655Z',
+  'M25 653C48 631 43 602 73 589C99 578 103 597 116 613C139 643 171 628 187 643C200 658 178 661 155 662C131 662 111 650 84 665C60 681 42 671 25 653Z',
+  'M54 643C71 622 58 610 79 605C100 601 97 624 114 635C135 650 151 640 158 650C158 660 128 644 111 646C84 651 75 663 54 643Z',
+  'M250 720C278 685 270 655 305 631C325 616 351 625 364 610C384 587 373 552 401 536C425 524 461 537 475 559',
+  'M283 720C307 685 291 671 326 649C343 638 371 646 388 625C410 600 397 577 421 562C439 551 461 555 481 573',
+];
+const ridge = [
+  'M1080 364C1061 397 1093 423 1075 461C1060 497 1025 512 1048 552C1069 589 1121 579 1126 619C1130 650 1098 680 1119 728',
+  'M1108 356C1087 392 1117 424 1102 460C1084 499 1054 516 1076 545C1097 572 1142 568 1150 610C1158 651 1128 689 1148 728',
+  'M1138 348C1117 389 1142 421 1126 460C1109 498 1080 519 1102 541C1124 563 1171 563 1180 600C1193 646 1157 695 1178 728',
+  'M1164 335C1146 377 1167 420 1152 459C1137 499 1111 517 1135 537C1155 553 1194 551 1208 593C1228 638 1189 684 1208 728',
+  'M1194 324C1171 375 1192 418 1180 457C1169 493 1140 514 1164 531C1194 552 1224 543 1241 583',
+];
+const valley = [
+  'M525 718C544 682 597 694 625 660C663 611 632 583 689 568C749 550 778 529 798 492C817 458 847 447 868 432',
+  'M550 722C567 695 616 708 645 671C686 621 660 596 702 589C766 578 802 544 819 511C839 476 862 471 887 449',
+  'M579 726C594 710 641 721 666 686C707 634 690 616 723 608C785 593 817 562 841 528C863 497 882 493 907 472',
+];
 ---
-<svg class="topographic-overlay" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-  <g class="contours">{contours.map(d => <path d={d} />)}</g>
-  <g class="highlights">{[3, 8].map(index => <path class="contour-highlight" d={contours[index]} pathLength="1000" />)}</g>
+<svg class="topographic-overlay" viewBox="0 0 1200 720" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <g class="contours terrain-foothills">{foothills.map(d => <path d={d}/>)}</g>
+  <g class="contours terrain-ridge">{ridge.map(d => <path d={d}/>)}</g>
+  <g class="contours terrain-valley">{valley.map(d => <path d={d}/>)}</g>
+  <g class="map-guides"><path d="M470 612H800M825 656H1178M667 516V715M1040 382V684"/><path d="M470 608V616M536 608V616M602 608V616M668 608V616M734 608V616M800 608V616M663 540H671M663 585H671M663 630H671M663 675H671"/></g>
+  <g class="registration"><path d="M990 485H1008M999 476V494M456 681H474M465 672V690M1166 347H1180V361M1178 680H1164V694"/><path d="M819 647V639H837M560 715H573V703M1034 415H1046M1040 409V421"/></g>
+  <g class="highlights"><path class="contour-highlight" d={valley[1]} pathLength="1000"/><path class="contour-highlight" d={ridge[2]} pathLength="1000"/></g>
 </svg>
 <style>
   .topographic-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-  path { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
-  .contours { stroke: var(--bs-border); opacity: .12; }
-  .highlights { stroke: var(--bs-brass); opacity: .16; }
-  .contour-highlight { stroke-dasharray: 32 968; animation: contour-travel 27s linear infinite; }
-  .contour-highlight:nth-child(2) { animation-duration: 33s; animation-delay: -13s; }
+  path { fill: none; stroke-width: .8; vector-effect: non-scaling-stroke; }
+  .contours { stroke: var(--bs-border); opacity: .09; }
+  .terrain-ridge { opacity: .12; }
+  .map-guides { stroke: var(--bs-border); opacity: .08; }
+  .registration { stroke: var(--bs-border); opacity: .16; }
+  .highlights { stroke: var(--bs-brass); opacity: .14; }
+  .contour-highlight { stroke-dasharray: 24 976; animation: contour-travel 29s linear infinite; }
+  .contour-highlight:nth-child(2) { animation-duration: 34s; animation-delay: -17s; }
   @keyframes contour-travel { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-  @media (max-width: 700px) { .contours { opacity: .08; } .highlights { opacity: .1; } }
-  @media (prefers-reduced-motion: reduce) { .contour-highlight { animation: none; stroke-dasharray: none; } .highlights { opacity: .08; } }
+  @media (max-width: 700px) { .map-guides,.registration,.terrain-ridge { display: none; } .contours { opacity: .06; } .highlights { opacity: .08; } }
+  @media (prefers-reduced-motion: reduce) { .contour-highlight { animation: none; stroke-dasharray: none; } .highlights { opacity: .06; } }
   @media (forced-colors: active) { .topographic-overlay { display: none; } }
 </style>

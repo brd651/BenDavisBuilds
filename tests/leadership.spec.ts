@@ -65,15 +65,16 @@ test('leadership metadata, About discovery, keyboard and System preference', asy
   await anchor.focus();
   expect(await anchor.evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
   await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/#the-operating-question-does-it-scale$/);
   await expect(page.locator('#the-operating-question-does-it-scale')).toBeFocused();
-  expect(await page.locator('#the-operating-question-does-it-scale').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
+  await expect.poll(() => page.locator('#the-operating-question-does-it-scale').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
   const card = page.locator('.principle-card').first();
   await card.focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#principle-01')).toBeFocused();
-  expect(await page.locator('#principle-01').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
+  await expect.poll(() => page.locator('#principle-01').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
   await chooseTheme(page, 'system');
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');

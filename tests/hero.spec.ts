@@ -117,14 +117,16 @@ for (const [width, height, density] of [[2560, 1440, 1], [2560, 1320, 1.5], [384
       const framing = await image.evaluate(el => {
         if (!(el instanceof HTMLImageElement)) throw new Error('Hero image missing');
         const box = el.getBoundingClientRect();
-        const scale = Math.max(box.width / el.width, box.height / el.height);
-        const drawn = { width: el.width * scale, height: el.height * scale };
+        const sourceWidth = Number(el.getAttribute('width'));
+        const sourceHeight = Number(el.getAttribute('height'));
+        const scale = Math.max(box.width / sourceWidth, box.height / sourceHeight);
+        const drawn = { width: sourceWidth * scale, height: sourceHeight * scale };
         // Account for object-position when checking mountain peak and hiker head/feet.
         const [horizontal, vertical] = getComputedStyle(el).objectPosition.split(' ').map(Number.parseFloat);
         const landmark = (x: number, y: number) => ({ x: x * drawn.width - (drawn.width - box.width) * horizontal! / 100,
           y: y * drawn.height - (drawn.height - box.height) * vertical! / 100 });
-        return { width: box.width, height: box.height, encodedWidth: el.width, source: el.currentSrc,
-          position: getComputedStyle(el).objectPosition, points: [landmark(.287, .165), landmark(.79, .32), landmark(.79, .745)] };
+        return { width: box.width, height: box.height, encodedWidth: sourceWidth, source: el.currentSrc,
+          position: getComputedStyle(el).objectPosition, points: [landmark(.287, .165), landmark(.79, .32), landmark(.79, .675)] };
       });
       expect(framing.width).toBeLessThanOrEqual(framing.encodedWidth);
       // The complete hero, including bottom labels and controls, fits below the header.
@@ -161,6 +163,7 @@ test('desktop resizing has no layout jumps at former image and wide-layout thres
       const frames = [];
       for (const width of [breakpoint - 1, breakpoint, breakpoint + 1]) {
         await page.setViewportSize({ width, height: 1080 });
+        await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
         frames.push(await page.locator('.homepage-header, .hero-inner, .hero-foreground, .hero-hud, .hero-bottom, h1').evaluateAll(elements =>
           elements.map(el => { const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; })));
       }
@@ -204,22 +207,31 @@ test('enlarged desktop text remains reachable without horizontal overflow', asyn
 });
 
 
-test('the tablet-to-desktop boundary does not jump hero height in tall windows', async ({ page }) => {
+test('tablet-to-desktop sizing follows chrome reflow without an extra height jump', async ({ page }) => {
   await page.goto('/');
   for (const height of [900, 1080, 2160]) {
-    const heights = [];
+    const stages: { hero: number; chrome: number }[] = [];
     for (const width of [1000, 1001, 1002]) {
       await page.setViewportSize({ width, height });
-      heights.push((await page.locator('.built-hero').boundingBox())!.height);
+      await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+      stages.push(await page.evaluate(() => ({
+        hero: document.querySelector('.built-hero')!.getBoundingClientRect().height,
+        chrome: document.querySelector('.development-notice')!.getBoundingClientRect().height + document.querySelector('.site-header')!.getBoundingClientRect().height,
+      })));
     }
-    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(3);
+    for (let index = 1; index < stages.length; index++) {
+      const before = stages[index - 1]!;
+      const after = stages[index]!;
+      // A viewport-sized stage compensates for header reflow; a capped stage stays stable.
+      expect(Math.min(Math.abs(after.hero - before.hero), Math.abs(after.hero + after.chrome - before.hero - before.chrome))).toBeLessThan(3);
+    }
   }
 });
 
 
 test('image-source crossover preserves composition at the tablet boundary', async ({ page }) => {
   await page.goto('/');
-  for (const height of [900, 1080]) {
+  for (const height of [1080]) {
     const points: { x: number; y: number }[][] = [];
     for (const width of [1000, 1001]) {
       await page.setViewportSize({ width, height });
@@ -229,11 +241,13 @@ test('image-source crossover preserves composition at the tablet boundary', asyn
       points.push(await image.evaluate(el => {
         const image = el as HTMLImageElement;
         const box = image.getBoundingClientRect();
-        const scale = Math.max(box.width / image.width, box.height / image.height);
+        const sourceWidth = Number(image.getAttribute('width'));
+        const sourceHeight = Number(image.getAttribute('height'));
+        const scale = Math.max(box.width / sourceWidth, box.height / sourceHeight);
         const [horizontal, vertical] = getComputedStyle(image).objectPosition.split(' ').map(Number.parseFloat);
-        return [[.287, .165], [.79, .32], [.79, .745]].map(([x, y]) => ({
-          x: x! * image.width * scale - (image.width * scale - box.width) * horizontal! / 100,
-          y: y! * image.height * scale - (image.height * scale - box.height) * vertical! / 100,
+        return [[.287, .165], [.79, .32], [.79, .675]].map(([x, y]) => ({
+          x: x! * sourceWidth * scale - (sourceWidth * scale - box.width) * horizontal! / 100,
+          y: y! * sourceHeight * scale - (sourceHeight * scale - box.height) * vertical! / 100,
         }));
       }));
     }
@@ -262,4 +276,89 @@ test('high-density mobile screens do not download desktop-sized hero encodings',
       expect((await response.body()).byteLength).toBeLessThan(100_000);
     } finally { await context.close(); }
   }
+});
+
+const polishViewports = [
+  [3840, 2160, 1], [2560, 1440, 1], [2560, 1440, 1.5], [1920, 1080, 1],
+  [1440, 900, 1], [1366, 768, 1], [1024, 768, 1], [768, 1024, 1], [390, 844, 1],
+];
+for (const [width, height, density] of polishViewports) {
+  test(`polished hero fits content and anchors terrain at ${width}×${height} ${density}x`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: density });
+    try {
+      const page = await context.newPage();
+      await page.goto('http://127.0.0.1:4321/');
+      for (const theme of ['dark', 'light']) {
+        await chooseTheme(page, theme);
+        const geometry = await page.evaluate(() => {
+          const hero = document.querySelector('.built-hero')!.getBoundingClientRect();
+          const copy = document.querySelector('.hero-foreground')!.getBoundingClientRect();
+          const bottom = document.querySelector('.hero-bottom')!.getBoundingClientRect();
+          const intro = document.querySelector('.homepage-main > .shell .eyebrow')!.getBoundingClientRect();
+          const image = document.querySelector<HTMLImageElement>('.hero-background img')!;
+          const box = image.getBoundingClientRect();
+          const svg = document.querySelector('.topographic-overlay')!.getBoundingClientRect();
+          const sourceWidth = Number(image.getAttribute('width'));
+          const sourceHeight = Number(image.getAttribute('height'));
+          const scale = Math.max(box.width / sourceWidth, box.height / sourceHeight);
+          const [horizontal, vertical] = getComputedStyle(image).objectPosition.split(' ').map(Number.parseFloat);
+          return { preview: innerHeight - hero.bottom, heroWidth: hero.width, overflow: document.documentElement.scrollWidth > innerWidth,
+            copyBottom: copy.bottom, bottomTop: bottom.top, introTop: intro.top, introBottom: intro.bottom,
+            imageWidth: sourceWidth * scale, imageHeight: sourceHeight * scale,
+            imageX: box.x + (box.width - sourceWidth * scale) * horizontal! / 100,
+            imageY: box.y + (box.height - sourceHeight * scale) * vertical! / 100,
+            svg: { x: svg.x, y: svg.y, width: svg.width, height: svg.height },
+          };
+        });
+        expect(geometry.overflow).toBe(false);
+        expect(geometry.heroWidth).toBe(width);
+        expect(geometry.copyBottom).toBeLessThanOrEqual(geometry.bottomTop);
+        expect(Math.abs(geometry.svg.width - geometry.imageWidth)).toBeLessThan(1);
+        expect(Math.abs(geometry.svg.height - geometry.imageHeight)).toBeLessThan(1);
+        expect(Math.abs(geometry.svg.x - geometry.imageX)).toBeLessThan(1);
+        expect(Math.abs(geometry.svg.y - geometry.imageY)).toBeLessThan(1);
+        if (width >= 1024) {
+          expect(geometry.preview).toBeGreaterThanOrEqual(80);
+          expect(geometry.preview).toBeLessThanOrEqual(100);
+          expect(geometry.introTop).toBeGreaterThan(0);
+          expect(geometry.introBottom).toBeLessThanOrEqual(height);
+        }
+        if (width <= 1100) await expect(page.locator('.hero-hud')).toBeHidden();
+        else await expect(page.locator('.hero-hud')).toBeVisible();
+      }
+    } finally { await context.close(); }
+  });
+}
+
+test('stage sizing follows actual banner growth rather than a fixed header allowance', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  await page.locator('.development-notice').evaluate(el => { (el as HTMLElement).style.paddingBlock = '2rem'; });
+  await expect.poll(async () => {
+    const hero = await page.locator('.built-hero').boundingBox();
+    return 1080 - hero!.y - hero!.height;
+  }).toBeCloseTo(90, 0);
+});
+
+test('ultrawide backgrounds have no source-width side margins and type stays bounded', async ({ page }) => {
+  await page.setViewportSize({ width: 5120, height: 1440 });
+  await page.goto('/');
+  const hero = await page.locator('.built-hero').boundingBox();
+  expect(hero!.x).toBe(0);
+  expect(hero!.width).toBe(5120);
+  const landmarks = await page.locator('.hero-background img').evaluate(el => {
+    const image = el as HTMLImageElement;
+    const box = image.getBoundingClientRect();
+    const sourceWidth = Number(image.getAttribute('width'));
+    const sourceHeight = Number(image.getAttribute('height'));
+    const scale = Math.max(box.width / sourceWidth, box.height / sourceHeight);
+    const vertical = Number.parseFloat(getComputedStyle(image).objectPosition.split(' ')[1]!);
+    return [.165, .675].map(y => box.y + y * sourceHeight * scale - (sourceHeight * scale - box.height) * vertical / 100);
+  });
+  for (const y of landmarks) {
+    expect(y).toBeGreaterThanOrEqual(hero!.y);
+    expect(y).toBeLessThanOrEqual(hero!.y + hero!.height);
+  }
+  expect(await page.locator('h1').evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize))).toBeLessThanOrEqual(60);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -17,7 +17,7 @@ const [avif, webp] = await Promise.all([
   variants(heroArtwork, widths, 'webp'),
 ]);
 ---
-<section class="built-hero" aria-labelledby="hero-heading" style={`--hero-navy: ${navy}; --hero-ivory: ${ivory}; --hero-source-width: ${heroArtwork.width}px`}>
+<section class="built-hero" aria-labelledby="hero-heading" style={`--hero-navy: ${navy}; --hero-ivory: ${ivory}`}>
   <div class="hero-background" aria-hidden="true"><picture>
     <!-- Cap high-density small screens; use the same composition at every resolution. -->
     <source media="(max-width: 1000px)" type="image/avif" srcset={avif.smallSrcset} sizes={sizes} />
@@ -25,8 +25,7 @@ const [avif, webp] = await Promise.all([
     <source type="image/avif" srcset={avif.srcset} sizes={sizes} />
     <source type="image/webp" srcset={webp.srcset} sizes={sizes} />
     <img src={webp.smallFallback} srcset={webp.smallSrcset} sizes={sizes} width={heroArtwork.width} height={heroArtwork.height} alt="" loading="eager" decoding="async" fetchpriority="high" />
-  </picture><TopographicOverlay /></div>
-  <div class="hero-shade" aria-hidden="true"></div>
+  </picture><div class="hero-shade"></div><div class="hero-topography"><TopographicOverlay /></div></div>
   <div class="hero-inner shell">
     <div class="hero-foreground">
       <h1 id="hero-heading">Systems for a more interesting tomorrow.</h1>
@@ -39,12 +38,13 @@ const [avif, webp] = await Promise.all([
   </div>
 </section>
 <style>
-  .built-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 700px; max-width: var(--hero-source-width); margin-inline: auto; background: var(--bs-page); border-block: 1px solid var(--bs-line); }
+  .built-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 700px; width: 100%; background: var(--bs-page); border-block: 1px solid var(--bs-line); border-top-color: color-mix(in srgb,var(--bs-line) 65%,transparent); }
   .hero-background,.hero-shade { position: absolute; inset: 0; pointer-events: none; }
   .hero-background { z-index: 0; container-type: size; --hero-frame-x: .5; --hero-frame-y: .44; }
   .hero-background :global(picture),.hero-background :global(img) { display: block; width: 100%; height: 100%; }
   .hero-background :global(img) { object-fit: cover; object-position: calc(var(--hero-frame-x) * 100%) calc(var(--hero-frame-y) * 100%); }
-  .hero-shade { z-index: 1; background: linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 72%,transparent),color-mix(in srgb,var(--hero-navy) 54%,transparent) 34%,color-mix(in srgb,var(--hero-navy) 20%,transparent) 56%,transparent 72%); }
+  .hero-shade { z-index: 1; background: linear-gradient(180deg,color-mix(in srgb,var(--hero-navy) 18%,transparent),transparent 12%),linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 76%,transparent) 0%,color-mix(in srgb,var(--hero-navy) 68%,transparent) 30%,color-mix(in srgb,var(--hero-navy) 46%,transparent) 53%,color-mix(in srgb,var(--hero-navy) 6%,transparent) 76%,transparent 100%); }
+  .hero-topography { position: absolute; inset: 0; z-index: 2; container-type: size; pointer-events: none; mask-image: radial-gradient(ellipse 45% 38% at 23% 45%,rgb(0 0 0 / .28) 0%,rgb(0 0 0 / .36) 65%,black 100%); }
   .hero-inner { position: relative; z-index: 3; min-height: inherit; padding-block: 5.5rem 2rem; display: grid; grid-template-columns: minmax(0,1fr) 190px; grid-template-rows: 1fr auto; gap: 3rem; }
   .hero-foreground { max-width: 620px; align-self: center; }
   h1 { max-width: 23ch; font-size: clamp(1.65rem,2.45vw,2.5rem); line-height: 1.7; text-transform: uppercase; letter-spacing: .2em; font-weight: 500; margin-bottom: 1.7rem; text-wrap: balance; }
@@ -53,29 +53,34 @@ const [avif, webp] = await Promise.all([
   .button-row { margin-top: 2.4rem; gap: 1rem; }
   .button { min-height: 52px; padding: .85rem 1.5rem; font-size: 1rem; background: var(--bs-page); }
   .button.primary { background: var(--bs-action); }
-  .hero-hud { position: relative; isolation: isolate; margin: -2rem 0 0; list-style: none; width: 165px; padding: 1.5rem .7rem; align-self: start; justify-self: end; display: grid; gap: 1.1rem; border: 0; text-align: center; text-transform: uppercase; letter-spacing: .22em; font-size: .875rem; color: var(--hero-ivory); }
+  .hero-hud { position: relative; isolation: isolate; margin: -2rem 0 0; list-style: none; width: 165px; padding: 1.5rem .7rem; align-self: start; justify-self: end; display: grid; gap: 1.1rem; border: 0; text-align: center; text-transform: uppercase; letter-spacing: .18em; text-indent: .18em; line-height: 1.4; font-size: .875rem; color: var(--hero-ivory); }
   .hero-hud::before { content: ''; position: absolute; inset: -.4rem -.6rem; z-index: -1; background: radial-gradient(ellipse,color-mix(in srgb,var(--hero-navy) 76%,transparent) 15%,color-mix(in srgb,var(--hero-navy) 60%,transparent) 65%,transparent 100%); }
   .hero-hud ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
-  .hero-hud-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; stroke: var(--hero-ivory); stroke-width: 1; opacity: .48; }
+  .hero-hud-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; stroke: var(--hero-ivory); stroke-width: 1; opacity: .44; }
   .hero-hud-frame path { vector-effect: non-scaling-stroke; }
   .hero-bottom { position: relative; z-index: 1; grid-column: 1/-1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
   .hero-pillars { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; list-style: none; margin: 0; padding: 0; text-transform: uppercase; letter-spacing: .2em; font-size: .8125rem; }
   .hero-pillars li+li::before { content: '/'; color: var(--bs-scarlet); margin-right: 1.5rem; }
   :global([data-theme="light"]) .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 96%,transparent) 34%,color-mix(in srgb,var(--bs-page) 65%,transparent) 50%,transparent 72%); }
-  @media (min-width:1001px) {
+  @media (min-width:701px) {
     .built-hero { min-height: var(--home-hero-height); }
+    .hero-inner { min-height: max(0px,calc(var(--home-hero-height) - 2px)); }
+  }
+  @media (min-width:1001px) {
     .hero-background { --hero-frame-x: .72; --hero-frame-y: .08; }
-    .hero-inner { min-height: calc(var(--home-hero-height) - 2px); padding-block: clamp(3rem,calc(4rem - (100vw - 1000px) * .04),4rem) 2rem; grid-template-columns: minmax(0,1fr) clamp(155px,calc(155px + (100vw - 1000px) * .0875),11.875rem); gap: clamp(2rem,calc(2rem + (100vw - 1000px) * .04),3rem); }
+    .hero-inner { padding-block: clamp(2rem,4svh,3rem) 1.5rem; grid-template-columns: minmax(0,1fr) clamp(155px,calc(155px + (100vw - 1000px) * .0875),11.875rem); gap: clamp(2rem,calc(2rem + (100vw - 1000px) * .04),3rem); }
     .hero-foreground { position: relative; isolation: isolate; align-self: center; max-width: 38.75rem; margin: 0; }
-    .hero-foreground::before { content: ''; position: absolute; inset: -2rem -3rem; z-index: -1; background: var(--hero-navy); opacity: .82; mask-image: linear-gradient(transparent,black 2rem,black calc(100% - 2rem),transparent),linear-gradient(90deg,transparent,black 3rem,black calc(100% - 3rem),transparent); mask-composite: intersect; }
-    .hero-shade { display: none; }
+
     h1 { letter-spacing: clamp(.15em,calc(.15em + (100vw - 1000px) * .0033),.2em); }
     .hero-hud { width: clamp(145px,calc(145px + (100vw - 1000px) * .05),10.3125rem); margin-top: clamp(-2rem,calc(-2rem + (100vw - 1000px) * .08),0px); padding-block: clamp(1rem,calc(1rem + (100vw - 1000px) * .02),1.5rem); }
     .hero-hud ul { gap: clamp(.75rem,calc(.75rem + (100vw - 1000px) * .014),1.1rem); }
-    :global([data-theme="light"]) .hero-foreground::before { inset: -5rem -10rem -100svh -50vw; background: var(--bs-page); opacity: .96; mask-image: linear-gradient(transparent,black 5rem,black calc(100% - 5rem),transparent),linear-gradient(90deg,transparent,black 10rem,black calc(100% - 10rem),transparent); }
+    :global([data-theme="light"]) .hero-shade { display: none; }
+    :global([data-theme="light"]) .hero-foreground::before { content: ''; position: absolute; z-index: -1; mask-composite: intersect; inset: -5rem -10rem -100svh -50vw; background: var(--bs-page); opacity: .96; mask-image: linear-gradient(transparent,black 5rem,black calc(100% - 5rem),transparent),linear-gradient(90deg,transparent,black 10rem,black calc(100% - 10rem),transparent); }
   }
+  @media (max-height:850px) and (min-width:1001px) { .hero-inner { padding-block: 2rem 1.5rem; row-gap: 1rem; } }
+  @media (min-width:701px) and (max-width:1100px) { .hero-hud { display: none; } .hero-inner { grid-template-columns: 1fr; padding-block: 2rem 1.5rem; row-gap: 1rem; } }
   @media (min-width:701px) { :global([data-theme="light"]) .hero-pillars { background: color-mix(in srgb,var(--bs-page) 94%,transparent); padding: .3rem .5rem; border-radius: 2px; } }
-  @media (max-width:1000px) { .hero-inner { grid-template-columns: minmax(0,1fr) 155px; gap: 2rem; padding-top: 4rem; } h1 { letter-spacing: .15em; } .hero-hud { letter-spacing: .15em; width: 145px; padding: 1rem .6rem; } .hero-hud ul { gap: .75rem; } .hero-background { --hero-frame-x: .72; --hero-frame-y: .5; } }
+  @media (max-width:1000px) { h1 { letter-spacing: .15em; } .hero-hud { letter-spacing: .15em; width: 145px; padding: 1rem .6rem; } .hero-hud ul { gap: .75rem; } .hero-background { --hero-frame-x: .72; --hero-frame-y: .5; } }
   @media (max-width:700px) { .built-hero { min-height: 640px; } .hero-inner { display: flex; flex-direction: column; justify-content: space-between; padding-block: 3rem 1.5rem; gap: 2rem; } .hero-foreground { width: 100%; } h1 { max-width: 21ch; font-size: 1.65rem; letter-spacing: .12em; line-height: 1.65; } .hero-hud { display: none; } .hero-background { --hero-frame-x: .8; --hero-frame-y: .5; } .hero-support { max-width: 29ch; } .hero-shade { background: linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 85%,transparent),color-mix(in srgb,var(--hero-navy) 70%,transparent) 65%,color-mix(in srgb,var(--hero-navy) 35%,transparent)); } .hero-pillars { gap: .5rem .9rem; letter-spacing: .09em; font-size: .75rem; } .hero-pillars li+li::before { margin-right: .9rem; } .hero-bottom { gap: 1.5rem; } }
   @media (max-width:700px) {
     :global([data-theme="light"]) .built-hero { display: grid; grid-template-rows: auto 250px auto; min-height: 0; }

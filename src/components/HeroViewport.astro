@@ -1,0 +1,15 @@
+<!-- Measure normal-flow chrome before the hero is parsed; CSS controls stage sizing. -->
+<script is:inline>
+  (() => {
+    const chrome = [document.querySelector('.development-notice'), document.querySelector('.homepage-header')];
+    const measure = () => {
+      const height = chrome.reduce((total, element) => total + (element?.getBoundingClientRect().height || 0), 0);
+      document.body.style.setProperty('--home-chrome-height', `${height}px`);
+    };
+    measure();
+    if ('ResizeObserver' in window) {
+      const observer = new ResizeObserver(measure);
+      chrome.forEach(element => { if (element) observer.observe(element); });
+    }
+  })();
+</script>

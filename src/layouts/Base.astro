@@ -3,6 +3,7 @@ import '../styles/site.css';
 import BrandMark from '../components/BrandMark.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
 import ThemeControl from '../components/ThemeControl.astro';
+import HeroViewport from '../components/HeroViewport.astro';
 interface Props { title: string; description?: string; homepageHero?: boolean }
 const { title, homepageHero = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
@@ -42,6 +43,7 @@ const canonical = new URL(path, Astro.site);
       {homepageHero && <HomepageSearch />}
       <ThemeControl />
     </header>
+    {homepageHero && <HeroViewport />}
     <main id="main" class:list={["shell", { "homepage-main": homepageHero }]} tabindex="-1"><slot /></main>
     <footer class="site-footer shell">
       <div><strong>Ben Davis Builds</strong><p>A Built Signal development template.</p></div>

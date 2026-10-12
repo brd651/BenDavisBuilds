@@ -49,6 +49,10 @@ import { careerStages } from '../data/career';
       <div class="building-story">
         <h3>Before this, there was TheoryIT.</h3>
         <p>Long before Ben Davis Builds, I ran a technical blog called TheoryIT. It was where I documented projects, experiments, troubleshooting lessons, and ideas I was testing in the lab. Some of it was focused on networking and security. Some of it involved automation, simulation, Linux routing, PowerShell, or other technical rabbit holes that caught my interest. Not everything worked perfectly... and that was part of the value.</p>
+        <div class="theoryit-archive">
+          <a href="https://web.archive.org/web/20190109115510/https://theoryit.com/" target="_blank" rel="noopener noreferrer" aria-describedby="theoryit-archive-note">Explore the original TheoryIT website — Internet Archive.</a>
+          <p id="theoryit-archive-note">Historical material. I no longer control the original theoryit.com domain.</p>
+        </div>
         <details class="lesson"><summary>A lesson from a firewall automation project <span aria-hidden="true">+</span></summary><p>One of the most useful lessons from that time came from a firewall automation project that did not behave the way I expected. A timing issue in the script left the device in recovery mode instead of completing cleanly. It was frustrating at the time, but it reinforced an idea that has stayed with me ever since... automation is only as good as your understanding of the systems, dependencies, and failure conditions underneath it.</p></details>
         <blockquote><p>Automation is only as good as your understanding of the systems, dependencies, and failure conditions underneath it.</p><cite>A lesson I still carry.</cite></blockquote>
       </div>
@@ -102,6 +106,9 @@ import { careerStages } from '../data/career';
   .building-heading > p:last-child { font-size: 1.125rem; max-width: 28ch; color: var(--bs-muted); }
   .building-story > p, .lesson p { font-size: 1.0625rem; line-height: 1.85; color: var(--bs-muted); }
   .building-story h3 { font-size: 1.5rem; line-height: 1.3; }
+  .theoryit-archive { margin-block: 1.5rem; }
+  .theoryit-archive a { font-size: .875rem; }
+  .theoryit-archive p { margin: .5rem 0 0; font-size: .8125rem; line-height: 1.7; color: var(--bs-muted); }
   .lesson { border-block: 1px solid var(--bs-border); margin-top: 1.5rem; }
   .lesson summary { display: flex; justify-content: space-between; gap: 1rem; padding-block: 1rem; cursor: pointer; font-size: .875rem; list-style: none; }
   .lesson summary::-webkit-details-marker { display: none; }

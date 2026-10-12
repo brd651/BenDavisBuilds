@@ -99,13 +99,50 @@ test('homepage reserves appearance-control space while browser utilities load', 
 test('hero uses responsive artwork and open HUD framing', async ({ page }) => {
   await page.goto('/');
   const picture = page.locator('.hero-background picture');
-  await expect(picture.locator('source[type="image/avif"]')).toHaveAttribute('srcset', /640w.*960w.*1280w/);
-  await expect(picture.locator('source[type="image/webp"]')).toHaveAttribute('srcset', /640w.*960w.*1280w/);
+  await expect(picture.locator('source[type="image/avif"]:not([media])')).toHaveAttribute('srcset', /640w.*960w.*1280w/);
+  await expect(picture.locator('source[type="image/webp"]:not([media])')).toHaveAttribute('srcset', /640w.*960w.*1280w/);
   const image = picture.locator('img');
   expect(await image.evaluate(el => el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0)).toBe(true);
-  await expect(image).toHaveAttribute('width', '1672');
-  await expect(image).toHaveAttribute('height', '941');
+  await expect(image).toHaveAttribute('width', '3840');
+  await expect(image).toHaveAttribute('height', '2160');
   expect(await page.locator('.hero-hud').evaluate(el => getComputedStyle(el).borderTopWidth)).toBe('0px');
   await expect(page.locator('.hero-hud-frame')).toBeVisible();
   await expect(page.getByText('Temporary landscape illustration', { exact: false })).toHaveCount(0);
 });
+
+
+for (const [width, height, density] of [[2560, 1440, 1], [2560, 1440, 1.5], [3840, 2160, 1], [1920, 1080, 2]]) {
+  test(`large hero preserves scene at ${width}px and ${density}x density`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: density });
+    try {
+      const page = await context.newPage();
+      await page.goto('http://127.0.0.1:4321/');
+      const image = page.locator('.hero-background img');
+      await image.evaluate(async el => { if (el instanceof HTMLImageElement) await el.decode(); });
+      const framing = await image.evaluate(el => {
+        if (!(el instanceof HTMLImageElement)) throw new Error('Hero image missing');
+        const box = el.getBoundingClientRect();
+        const scale = Math.max(box.width / el.width, box.height / el.height);
+        const drawn = { width: el.width * scale, height: el.height * scale };
+        // Wide view is centered horizontally and top-aligned; landmarks are normalized source coordinates.
+        const landmark = (x: number, y: number) => ({ x: x * drawn.width - (drawn.width - box.width) / 2, y: y * drawn.height });
+        return { width: box.width, height: box.height, encodedWidth: el.width, source: el.currentSrc,
+          position: getComputedStyle(el).objectPosition, points: [landmark(.287, .165), landmark(.79, .32), landmark(.79, .745)] };
+      });
+      expect(framing.width).toBeLessThanOrEqual(framing.encodedWidth);
+      expect(framing.position).toBe('50% 0%');
+      for (const point of framing.points) {
+        expect(point.x).toBeGreaterThanOrEqual(0);
+        expect(point.x).toBeLessThanOrEqual(framing.width);
+        expect(point.y).toBeGreaterThanOrEqual(0);
+        expect(point.y).toBeLessThanOrEqual(framing.height);
+      }
+      if (width * density >= 3840) {
+        const srcset = await page.locator('source[type="image/avif"][media]').getAttribute('srcset');
+        const largest = srcset?.split(',').find(candidate => candidate.trim().endsWith('3840w'))?.trim().split(' ')[0];
+        expect(framing.source).toBe(new URL(largest!, page.url()).href);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    } finally { await context.close(); }
+  });
+}

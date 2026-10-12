@@ -26,9 +26,9 @@ test('contours have slow traveling highlights, a pause control and a reduced-mot
   const overlay = page.locator('.topographic-overlay');
   await expect(overlay).toHaveAttribute('aria-hidden', 'true');
   expect(await overlay.evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none');
-  await expect(overlay.locator('.contours path')).toHaveCount(14);
+  await expect(overlay.locator('.contours path')).toHaveCount(24);
   await expect(overlay.locator('.map-guides, .registration')).toHaveCount(2);
-  await expect(overlay.locator('.contour-highlight')).toHaveCount(2);
+  await expect(overlay.locator('.contour-highlight')).toHaveCount(4);
   const durations = await overlay.locator('.contour-highlight').evaluateAll(paths => paths.map(path => Number.parseFloat(getComputedStyle(path).animationDuration)));
   expect(durations.every(seconds => seconds >= 20 && seconds <= 35)).toBe(true);
   await page.getByLabel('Pause contour motion').check();

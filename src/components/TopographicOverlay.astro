@@ -1,47 +1,80 @@
 ---
-// Independently drawn terrain clusters: closed foothills, angular ridge and valley.
-// Fourteen stationary contours, two highlights and four guide/registration paths.
-const foothills = [
-  'M-25 655C7 607 18 570 64 552C99 538 127 553 143 582C162 615 208 598 231 621C254 641 231 677 197 693C155 712 117 684 79 698C40 714-10 706-25 655Z',
-  'M-5 655C27 628 25 591 67 572C98 558 114 572 129 596C151 631 202 610 213 634C226 659 201 672 176 677C142 686 119 664 83 680C50 695 17 685-5 655Z',
-  'M25 653C48 631 43 602 73 589C99 578 103 597 116 613C139 643 171 628 187 643C200 658 178 661 155 662C131 662 111 650 84 665C60 681 42 671 25 653Z',
-  'M54 643C71 622 58 610 79 605C100 601 97 624 114 635C135 650 151 640 158 650C158 660 128 644 111 646C84 651 75 663 54 643Z',
-  'M250 720C278 685 270 655 305 631C325 616 351 625 364 610C384 587 373 552 401 536C425 524 461 537 475 559',
-  'M283 720C307 685 291 671 326 649C343 638 371 646 388 625C410 600 397 577 421 562C439 551 461 555 481 573',
+import tokens from '../../built_signal_v1/design/built-signal.tokens.json';
+// Terrain-following contours drawn in the Alpine Sunrise artwork's coordinates.
+// These are illustrative contours, not surveyed elevation or geographic data.
+const contours = [
+  'M-24 227C77 251 117 279 188 258S294 310 353 294S436 352 490 337S602 382 667 364S778 429 849 420S966 479 1058 467',
+  'M-24 265C53 286 78 318 143 304S227 277 269 314S363 359 420 346S507 397 564 381S656 414 710 409S834 462 903 465S1009 493 1092 485',
+  'M-24 302C48 317 74 346 132 333S211 309 249 343S345 385 402 367S505 422 572 413S700 457 759 443S919 502 1060 500',
+  'M-24 338C59 363 90 378 151 360S222 352 272 391S351 391 407 415S505 445 554 433S653 478 720 473S854 521 926 522S1022 527 1084 512',
+  'M-24 372C58 403 91 402 144 387S211 377 252 410S326 442 375 437S469 492 530 474S632 513 698 516S836 555 909 552S1016 548 1066 531',
+  'M-24 413C53 429 97 436 157 418S224 427 251 455S335 457 384 481S484 522 547 504S637 549 714 547S863 584 945 566',
+  'M-24 449C51 479 109 462 167 450S231 467 277 494S355 494 405 517S508 553 567 545S684 589 748 581S890 607 949 586',
+  'M-24 491C39 514 73 488 133 492S225 519 272 529S344 551 396 550S482 590 550 582S660 621 724 614S851 644 923 607',
+  'M-24 534C48 523 81 545 132 537S202 545 244 577S318 577 374 599S462 620 512 617S642 664 704 655S836 678 892 647',
+  'M-24 578C55 560 111 591 160 595S224 619 270 626S350 654 403 645S497 683 550 681S668 707 720 701S830 706 879 679',
+  'M-24 623C55 608 99 639 144 653S218 679 271 680S362 703 416 713S510 733 558 729S659 759 718 753S827 739 857 713',
+  'M-24 675C41 688 99 668 141 714S213 746 270 758S365 775 413 793S505 821 566 811S659 825 712 801S796 790 841 765',
+  'M-24 725C62 723 109 753 157 786S235 810 291 830S381 844 427 881S532 906 581 888S676 857 729 858S805 829 823 806',
+  'M-24 781C45 786 88 823 143 842S231 877 286 893S367 914 400 954',
+  'M1107 483C1070 502 1076 525 1024 544S928 572 960 592S1030 605 1000 631S899 662 930 684S1011 712 960 735S856 762 875 791S969 828 916 853S824 889 757 899',
+  'M1139 510C1093 526 1098 549 1058 564S974 580 989 596S1069 621 1038 647S954 674 971 693S1052 721 1003 750S897 779 925 800S1016 839 965 869S864 905 794 920',
+  'M1082 543C1043 559 1001 563 1020 580S1105 610 1081 638S994 668 1013 690S1094 735 1045 762S946 789 971 811S1060 849 1014 883S913 930 872 949',
+  'M1024 607C1062 607 1141 622 1115 651S1035 677 1059 704S1137 741 1092 776S996 802 1026 830S1104 873 1062 911S1008 936 984 958',
+  'M1700 443C1632 454 1602 492 1559 505S1465 542 1450 571S1494 611 1475 637S1389 667 1364 689S1325 727 1278 755S1201 805 1156 835',
+  'M1700 489C1642 504 1625 535 1568 548S1503 576 1490 594S1530 631 1500 661S1418 689 1397 721S1329 763 1288 796S1224 839 1189 876',
+  'M1700 541C1657 554 1622 581 1579 581S1514 609 1548 637S1550 683 1490 704S1450 745 1409 761S1319 808 1289 840S1235 899 1217 958',
+  'M1700 594C1647 613 1602 607 1588 636S1622 675 1550 710S1534 749 1479 783S1398 817 1371 852S1319 909 1309 958',
+  'M1700 657C1650 670 1680 695 1613 723S1603 766 1545 797S1454 840 1431 879S1396 927 1381 958',
+  'M1700 732C1640 752 1654 780 1608 811S1517 860 1498 897S1460 941 1448 958',
 ];
-const ridge = [
-  'M1080 364C1061 397 1093 423 1075 461C1060 497 1025 512 1048 552C1069 589 1121 579 1126 619C1130 650 1098 680 1119 728',
-  'M1108 356C1087 392 1117 424 1102 460C1084 499 1054 516 1076 545C1097 572 1142 568 1150 610C1158 651 1128 689 1148 728',
-  'M1138 348C1117 389 1142 421 1126 460C1109 498 1080 519 1102 541C1124 563 1171 563 1180 600C1193 646 1157 695 1178 728',
-  'M1164 335C1146 377 1167 420 1152 459C1137 499 1111 517 1135 537C1155 553 1194 551 1208 593C1228 638 1189 684 1208 728',
-  'M1194 324C1171 375 1192 418 1180 457C1169 493 1140 514 1164 531C1194 552 1224 543 1241 583',
-];
-const valley = [
-  'M525 718C544 682 597 694 625 660C663 611 632 583 689 568C749 550 778 529 798 492C817 458 847 447 868 432',
-  'M550 722C567 695 616 708 645 671C686 621 660 596 702 589C766 578 802 544 819 511C839 476 862 471 887 449',
-  'M579 726C594 710 641 721 666 686C707 634 690 616 723 608C785 593 817 562 841 528C863 497 882 493 907 472',
+const currents = [
+  { index: 2, duration: '29.3s', delay: '-8.7s', span: 38 },
+  { index: 8, duration: '33.1s', delay: '-23.4s', span: 48 },
+  { index: 15, duration: '24.9s', delay: '-15.2s', span: 32 },
+  { index: 20, duration: '31.7s', delay: '-3.6s', span: 42 },
 ];
 ---
-<svg class="topographic-overlay" viewBox="0 0 1200 720" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-  <g class="contours terrain-foothills">{foothills.map(d => <path d={d}/>)}</g>
-  <g class="contours terrain-ridge">{ridge.map(d => <path d={d}/>)}</g>
-  <g class="contours terrain-valley">{valley.map(d => <path d={d}/>)}</g>
-  <g class="map-guides"><path d="M470 612H800M825 656H1178M667 516V715M1040 382V684"/><path d="M470 608V616M536 608V616M602 608V616M668 608V616M734 608V616M800 608V616M663 540H671M663 585H671M663 630H671M663 675H671"/></g>
-  <g class="registration"><path d="M990 485H1008M999 476V494M456 681H474M465 672V690M1166 347H1180V361M1178 680H1164V694"/><path d="M819 647V639H837M560 715H573V703M1034 415H1046M1040 409V421"/></g>
-  <g class="highlights"><path class="contour-highlight" d={valley[1]} pathLength="1000"/><path class="contour-highlight" d={ridge[2]} pathLength="1000"/></g>
+<svg class="topographic-overlay" viewBox="0 0 1672 941" preserveAspectRatio="none" aria-hidden="true" focusable="false" style={`--topo-line: ${tokens.referenceSwatches.ivory}; --topo-ember: ${tokens.optionalHistoricalAccent.classicEmber}`}>
+  <g class="contours">{contours.map((d, index) => <path d={d} class:list={{ 'index-contour': [2, 8, 12, 15, 20].includes(index), 'minor-contour': index % 4 === 1 }}/>)}</g>
+  <g class="map-guides"><path d="M128 58V79M1546 58V79M59 133H80M59 526H80M59 791H80"/><path d="M114 67H142M1532 67H1560M68 121V145M68 514V538M68 779V803"/></g>
+  <g class="registration"><path d="M1417 229H1443M1430 216V242M529 500H555M542 487V513M335 662H361M348 649V675"/><path d="M709 815H735M722 802V828M855 609H881M868 596V622"/></g>
+  <g class="highlights">{currents.map(({ index, duration, delay, span }) => <g class="contour-highlight" style={`--flow-duration: ${duration}; --flow-delay: ${delay}; --flow-span: ${span}`}>
+    <path class="current-halo" d={contours[index]} pathLength="1000"/>
+    <path class="current-aura" d={contours[index]} pathLength="1000"/>
+    <path class="current-core" d={contours[index]} pathLength="1000"/>
+  </g>)}</g>
 </svg>
 <style>
-  .topographic-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-  path { fill: none; stroke-width: .8; vector-effect: non-scaling-stroke; }
-  .contours { stroke: var(--bs-border); opacity: .09; }
-  .terrain-ridge { opacity: .12; }
-  .map-guides { stroke: var(--bs-border); opacity: .08; }
-  .registration { stroke: var(--bs-border); opacity: .16; }
-  .highlights { stroke: var(--bs-brass); opacity: .14; }
-  .contour-highlight { stroke-dasharray: 24 976; animation: contour-travel 29s linear infinite; }
-  .contour-highlight:nth-child(2) { animation-duration: 34s; animation-delay: -17s; }
-  @keyframes contour-travel { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-  @media (max-width: 700px) { .map-guides,.registration,.terrain-ridge { display: none; } .contours { opacity: .06; } .highlights { opacity: .08; } }
-  @media (prefers-reduced-motion: reduce) { .contour-highlight { animation: none; stroke-dasharray: none; } .highlights { opacity: .06; } }
+  /* Match the photograph's cover sizing/crop instead of stretching a screen-space map. */
+  .topographic-overlay {
+    position: absolute;
+    width: max(100cqw, calc(100cqh * 16 / 9));
+    height: max(100cqh, calc(100cqw * 9 / 16));
+    left: calc((100% - max(100cqw, calc(100cqh * 16 / 9))) * var(--hero-frame-x, .5));
+    top: calc((100% - max(100cqh, calc(100cqw * 9 / 16))) * var(--hero-frame-y, .44));
+    pointer-events: none;
+    z-index: 2;
+  }
+  path { fill: none; stroke-width: 1.1; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+  .contours { stroke: var(--topo-line); opacity: .38; }
+  .minor-contour { stroke-dasharray: 4 5; opacity: .7; }
+  .index-contour { stroke: var(--topo-ember); stroke-dasharray: 7 4; opacity: .94; }
+  .map-guides { stroke: var(--topo-line); opacity: .28; }
+  .registration { stroke: var(--topo-line); opacity: .32; }
+  /* Unequal cycles/phases produce irregular currents; layered strokes add glow without blur filters. */
+  .contour-highlight { stroke-dasharray: var(--flow-span) calc(1000 - var(--flow-span)); opacity: 0; animation: terrain-current var(--flow-duration) linear var(--flow-delay) infinite; }
+  .current-halo { stroke: var(--topo-ember); stroke-width: 7; opacity: .12; }
+  .current-aura { stroke: var(--bs-brass); stroke-width: 3.5; opacity: .4; }
+  .current-core { stroke: var(--topo-line); stroke-width: 1.4; opacity: .95; }
+  @keyframes terrain-current {
+    0% { stroke-dashoffset: 1050; opacity: 0; }
+    12% { opacity: .9; }
+    47% { opacity: .8; }
+    76%,100% { opacity: 0; }
+    100% { stroke-dashoffset: -50; }
+  }
+  @media (max-width: 700px) { .map-guides,.registration { display: none; } .contours { opacity: .3; } .current-halo { stroke-width: 5; } }
+  @media (prefers-reduced-motion: reduce) { .contour-highlight { animation: none; opacity: 0; } }
   @media (forced-colors: active) { .topographic-overlay { display: none; } }
 </style>

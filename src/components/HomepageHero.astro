@@ -25,9 +25,8 @@ const [avif, webp] = await Promise.all([
     <source type="image/avif" srcset={avif.srcset} sizes={sizes} />
     <source type="image/webp" srcset={webp.srcset} sizes={sizes} />
     <img src={webp.smallFallback} srcset={webp.smallSrcset} sizes={sizes} width={heroArtwork.width} height={heroArtwork.height} alt="" loading="eager" decoding="async" fetchpriority="high" />
-  </picture></div>
+  </picture><TopographicOverlay /></div>
   <div class="hero-shade" aria-hidden="true"></div>
-  <TopographicOverlay />
   <div class="hero-inner shell">
     <div class="hero-foreground">
       <h1 id="hero-heading">Systems for a more interesting tomorrow.</h1>
@@ -42,9 +41,9 @@ const [avif, webp] = await Promise.all([
 <style>
   .built-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 700px; max-width: var(--hero-source-width); margin-inline: auto; background: var(--bs-page); border-block: 1px solid var(--bs-line); }
   .hero-background,.hero-shade { position: absolute; inset: 0; pointer-events: none; }
-  .hero-background { z-index: 0; }
+  .hero-background { z-index: 0; container-type: size; --hero-frame-x: .5; --hero-frame-y: .44; }
   .hero-background :global(picture),.hero-background :global(img) { display: block; width: 100%; height: 100%; }
-  .hero-background :global(img) { object-fit: cover; object-position: 50% 44%; }
+  .hero-background :global(img) { object-fit: cover; object-position: calc(var(--hero-frame-x) * 100%) calc(var(--hero-frame-y) * 100%); }
   .hero-shade { z-index: 1; background: linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 72%,transparent),color-mix(in srgb,var(--hero-navy) 54%,transparent) 34%,color-mix(in srgb,var(--hero-navy) 20%,transparent) 56%,transparent 72%); }
   .hero-inner { position: relative; z-index: 3; min-height: inherit; padding-block: 5.5rem 2rem; display: grid; grid-template-columns: minmax(0,1fr) 190px; grid-template-rows: 1fr auto; gap: 3rem; }
   .hero-foreground { max-width: 620px; align-self: center; }
@@ -69,7 +68,7 @@ const [avif, webp] = await Promise.all([
   :global([data-theme="light"]) .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 96%,transparent) 34%,color-mix(in srgb,var(--bs-page) 65%,transparent) 50%,transparent 72%); }
   @media (min-width:1001px) {
     .built-hero { min-height: var(--home-hero-height); }
-    .hero-background :global(img) { object-position: 72% 8%; }
+    .hero-background { --hero-frame-x: .72; --hero-frame-y: .08; }
     .hero-inner { min-height: calc(var(--home-hero-height) - 2px); padding-block: clamp(3rem,calc(4rem - (100vw - 1000px) * .04),4rem) 2rem; grid-template-columns: minmax(0,1fr) clamp(155px,calc(155px + (100vw - 1000px) * .0875),11.875rem); gap: clamp(2rem,calc(2rem + (100vw - 1000px) * .04),3rem); }
     .hero-foreground { position: relative; isolation: isolate; align-self: center; max-width: 38.75rem; margin: 0; }
     .hero-foreground::before { content: ''; position: absolute; inset: -2rem -3rem; z-index: -1; background: var(--hero-navy); opacity: .82; mask-image: linear-gradient(transparent,black 2rem,black calc(100% - 2rem),transparent),linear-gradient(90deg,transparent,black 3rem,black calc(100% - 3rem),transparent); mask-composite: intersect; }
@@ -80,14 +79,14 @@ const [avif, webp] = await Promise.all([
     :global([data-theme="light"]) .hero-foreground::before { inset: -5rem -10rem -100svh -50vw; background: var(--bs-page); opacity: .96; mask-image: linear-gradient(transparent,black 5rem,black calc(100% - 5rem),transparent),linear-gradient(90deg,transparent,black 10rem,black calc(100% - 10rem),transparent); }
   }
   @media (min-width:701px) { :global([data-theme="light"]) .hero-pillars { background: color-mix(in srgb,var(--bs-page) 94%,transparent); padding: .3rem .5rem; border-radius: 2px; } }
-  @media (max-width:1000px) { .hero-inner { grid-template-columns: minmax(0,1fr) 155px; gap: 2rem; padding-top: 4rem; } h1 { letter-spacing: .15em; } .hero-hud { letter-spacing: .15em; width: 145px; padding: 1rem .6rem; } .hero-hud ul { gap: .75rem; } .hero-background :global(img) { object-position: 72% center; } }
-  @media (max-width:700px) { .built-hero { min-height: 640px; } .hero-inner { display: flex; flex-direction: column; justify-content: space-between; padding-block: 3rem 1.5rem; gap: 2rem; } .hero-foreground { width: 100%; } h1 { max-width: 21ch; font-size: 1.65rem; letter-spacing: .12em; line-height: 1.65; } .hero-hud { display: none; } .hero-background :global(img) { object-position: 80% center; } .hero-support { max-width: 29ch; } .hero-shade { background: linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 85%,transparent),color-mix(in srgb,var(--hero-navy) 70%,transparent) 65%,color-mix(in srgb,var(--hero-navy) 35%,transparent)); } .hero-pillars { gap: .5rem .9rem; letter-spacing: .09em; font-size: .75rem; } .hero-pillars li+li::before { margin-right: .9rem; } .hero-bottom { gap: 1.5rem; } }
+  @media (max-width:1000px) { .hero-inner { grid-template-columns: minmax(0,1fr) 155px; gap: 2rem; padding-top: 4rem; } h1 { letter-spacing: .15em; } .hero-hud { letter-spacing: .15em; width: 145px; padding: 1rem .6rem; } .hero-hud ul { gap: .75rem; } .hero-background { --hero-frame-x: .72; --hero-frame-y: .5; } }
+  @media (max-width:700px) { .built-hero { min-height: 640px; } .hero-inner { display: flex; flex-direction: column; justify-content: space-between; padding-block: 3rem 1.5rem; gap: 2rem; } .hero-foreground { width: 100%; } h1 { max-width: 21ch; font-size: 1.65rem; letter-spacing: .12em; line-height: 1.65; } .hero-hud { display: none; } .hero-background { --hero-frame-x: .8; --hero-frame-y: .5; } .hero-support { max-width: 29ch; } .hero-shade { background: linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 85%,transparent),color-mix(in srgb,var(--hero-navy) 70%,transparent) 65%,color-mix(in srgb,var(--hero-navy) 35%,transparent)); } .hero-pillars { gap: .5rem .9rem; letter-spacing: .09em; font-size: .75rem; } .hero-pillars li+li::before { margin-right: .9rem; } .hero-bottom { gap: 1.5rem; } }
   @media (max-width:700px) {
     :global([data-theme="light"]) .built-hero { display: grid; grid-template-rows: auto 250px auto; min-height: 0; }
     :global([data-theme="light"]) .hero-inner { display: contents; }
     :global([data-theme="light"]) .hero-foreground { grid-row: 1; grid-column: 1; width: calc(100% - 2rem); margin: 3rem auto 2rem; }
     :global([data-theme="light"]) .hero-background { position: relative; inset: auto; grid-row: 2; grid-column: 1; height: 250px; }
-    :global([data-theme="light"]) .hero-background :global(img) { object-position: 72% 44%; }
+    :global([data-theme="light"]) .hero-background { --hero-frame-x: .72; --hero-frame-y: .44; }
     :global([data-theme="light"]) .hero-shade { display: none; }
     :global([data-theme="light"]) .hero-bottom { grid-row: 3; grid-column: 1; margin: 1.5rem 1rem; }
   }

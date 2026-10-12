@@ -1,7 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Page from '../layouts/Page.astro';
+import ProjectArtwork from '../components/ProjectArtwork.astro';
 const entries = await getCollection('projects');
 const rendered = await Promise.all(entries.map(async entry => ({ entry, ...await render(entry) })));
 ---
-<Page title="Ideas, taking shape." intro="Sample project content. No real delivery, client, or measured result is claimed.">{rendered.map(({entry, Content}) => <article class="card project-card"><p class="eyebrow">{entry.data.category} · sample</p><h2>{entry.data.title}</h2><p>{entry.data.description}</p><Content /></article>)}<div class="section-link"><a class="button" href="/lab/">Explore the simulated lab →</a></div></Page>
+<Page title="Ideas, taking shape." intro="Sample project content. No real delivery, client, or measured result is claimed.">{rendered.map(({entry, Content}) => <article class="card project-card"><ProjectArtwork /><p class="eyebrow">{entry.data.category} · sample</p><h2>{entry.data.title}</h2><p>{entry.data.description}</p><Content /><dl class="project-details"><div><dt>Question / sample</dt><dd>Lorem ipsum dolor sit amet. What would make the system easier to understand?</dd></div><div><dt>Approach / sample</dt><dd>Consectetur adipiscing elit. Outline the parts before adding complexity.</dd></div><div><dt>Lessons / placeholder</dt><dd>No measured result or delivered outcome is claimed.</dd></div></dl></article>)}<div class="section-link"><a class="button" href="/lab/">Explore the simulated lab →</a></div></Page>

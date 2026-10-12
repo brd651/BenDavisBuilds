@@ -1,0 +1,23 @@
+{
+  "name": "Ben Davis Builds — Development",
+  "short_name": "Ben Davis",
+  "description": "Built Signal development template. Provisional identity and sample content.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0B1623",
+  "theme_color": "#0B1623",
+  "icons": [
+    {
+      "src": "/identity/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/identity/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

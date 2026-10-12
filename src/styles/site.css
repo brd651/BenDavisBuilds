@@ -95,3 +95,60 @@ figcaption { color: var(--bs-muted); font-size: .875rem; margin: .5rem; }
 @media (max-width: 700px) { .shell { width: calc(100% - 2rem); } .hero { grid-template-columns: 1fr; padding-top: 2rem; gap: 2rem; } .hero-art { min-height: 320px; } .hero h1 { font-size: clamp(2.75rem, 10vw, 4rem); } .section-heading { grid-template-columns: 1fr; gap: .5rem; } .card-grid { grid-template-columns: 1fr; } .section { padding-block: 2.5rem; } .closing-panel { padding: 1.8rem; } .page-heading { padding-top: 2rem; } .lab-diagram { padding: .25rem; } .site-footer { flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media (forced-colors: active) { .button, .card, .hero-art, .sample-note { border-color: CanvasText; } .brand-stripe { background: CanvasText; } }
+
+/* Built Signal identity: provisional board reconstruction, shared in all assets. */
+.wordmark { flex-direction: row; align-items: center; gap: .7rem; }
+.brand-mark { width: 3rem; height: auto; flex: 0 0 auto; display: block; }
+.mark-stripe { fill: var(--bs-scarlet); }
+.wordmark-type { display: flex; flex-direction: column; }
+.wordmark-type strong { font-size: 1.65rem; letter-spacing: -.055em; line-height: 1.1; }
+.wordmark .wordmark-type { font-size: inherit; gap: 0; }
+.wordmark small { font-size: .56rem; letter-spacing: .25em; }
+.signal-hero { position: relative; isolation: isolate; min-height: 630px; padding: 4rem 3rem; overflow: hidden; border: 1px solid var(--bs-line); border-radius: 5px; }
+.landscape { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.signal-hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 94%,transparent) 40%,color-mix(in srgb,var(--bs-page) 20%,transparent)); }
+.landscape-sun { fill: var(--bs-brass); opacity: .16; }
+.landscape-grid { stroke: var(--bs-border); stroke-width: .6; fill: none; opacity: .15; }
+.signal-hero-content { position: relative; max-width: 660px; }
+.signature-label::after { content: ''; display: block; width: 2rem; height: 2px; background: var(--bs-scarlet); margin-top: 1rem; }
+.hero-identity { display: flex; align-items: center; gap: 1.1rem; margin-block: 2rem; }
+.hero-identity .brand-mark { width: 5rem; }
+.hero-identity strong { display: block; font-size: clamp(2.2rem,4vw,3.7rem); line-height: 1; letter-spacing: -.055em; }
+.hero-identity span { display: block; letter-spacing: .27em; font-size: .75rem; margin-top: .75rem; }
+.signal-hero h1 { font-size: clamp(2.3rem,4.3vw,3.65rem); margin-bottom: 1.4rem; }
+.signal-hero h1 em { font-style: normal; }
+.signal-hero .lead { max-width: 43ch; }
+.hero-principles { position: absolute; right: 2.5rem; top: 3.5rem; border-block: 1px solid var(--bs-border); border-right: 1px solid var(--bs-border); padding: 1rem 1.5rem; display: grid; gap: .7rem; font: .75rem ui-monospace,monospace; text-transform: uppercase; letter-spacing: .17em; }
+.signal-strip { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1.3rem 0; font-size: .75rem; color: var(--bs-muted); }
+.signal-strip p { margin: 0; }
+.signal-strip p:first-child { text-transform: uppercase; letter-spacing: .14em; }
+.signal-strip span { padding-inline: .5rem; }
+.feature-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.5rem; }
+.feature-card { border: 1px solid var(--bs-line); background: var(--bs-surface); border-radius: 5px; overflow: hidden; }
+.feature-copy { padding: 2rem; }
+.feature-copy p { color: var(--bs-muted); }
+.project-artwork { background: linear-gradient(135deg,var(--bs-page),var(--bs-raised)); border-bottom: 1px solid var(--bs-line); }
+.project-artwork svg { width: 100%; height: auto; display: block; }
+.artwork-detail { stroke: var(--bs-brass); stroke-width: 2; fill: none; }
+.closing-split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center; }
+.closing-split p { color: var(--bs-muted); }
+.editorial-grid { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); gap: 3rem; }
+.editorial-aside { border-top: 2px solid var(--bs-brass); padding-top: 1.4rem; }
+.editorial-aside h2 { font-size: 1.4rem; letter-spacing: -.025em; }
+.editorial-aside p { color: var(--bs-muted); }
+.detail-list { padding: 0; list-style: none; margin: 2rem 0; }
+.detail-list li { border-top: 1px solid var(--bs-line); padding-block: 1rem; }
+.detail-list strong { display: block; }
+.detail-list span { color: var(--bs-muted); }
+.track-card .track-number { font: 1rem ui-monospace,monospace; color: var(--bs-muted); margin-bottom: 2rem; }
+.project-card { max-width: none; margin-bottom: 1.5rem; }
+.project-details { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.5rem; margin-top: 2rem; border-top: 1px solid var(--bs-line); padding-top: 1.5rem; }
+.project-details dt { font-weight: 650; }
+.project-details dd { margin: .5rem 0 0; color: var(--bs-muted); }
+@media (max-width:1000px) { .hero-principles { position: static; display: flex; flex-wrap: wrap; gap: 1.2rem; border: 0; padding: 0; margin-top: 2rem; } .signal-hero::before { background: color-mix(in srgb,var(--bs-page) 92%,transparent); } }
+@media (max-width:700px) { .signal-hero { padding: 2rem 1.5rem; min-height: auto; } .hero-identity .brand-mark { width: 3.5rem; } .hero-identity span { font-size: .625rem; letter-spacing: .17em; } .signal-hero h1 { font-size: clamp(2rem,8vw,3rem); } .feature-grid,.closing-split,.editorial-grid,.project-details { grid-template-columns: 1fr; } .feature-copy { padding: 1.5rem; } .editorial-grid { gap: 2rem; } }
+@media (forced-colors:active) { .mark-stripe { fill: CanvasText; } .signal-hero { border-color: CanvasText; } .landscape { display: none; } .signal-hero::before { display: none; } }
+/* Let the shared identity wrap when visitors enlarge text. */
+.wordmark { max-width: 100%; flex-shrink: 1; }
+.wordmark-type, .hero-identity > div { min-width: 0; }
+.hero-identity { min-width: 0; }

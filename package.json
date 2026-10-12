@@ -18,7 +18,8 @@
     "screenshots": "node scripts/screenshots.mjs",
     "validate:tokens": "python3 built_signal_v1/verification/check_tokens.py",
     "validate:budget": "node scripts/check-js-budget.mjs",
-    "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test"
+    "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test",
+    "assets:identity": "node scripts/generate-identity.mjs"
   },
   "dependencies": {
     "astro": "7.3.8"

@@ -1,0 +1,10 @@
+---
+import { mark } from '../identity/mark';
+interface Props { class?: string }
+const { class: className = '' } = Astro.props;
+---
+<svg class={`brand-mark ${className}`} viewBox={mark.viewBox} aria-hidden="true" focusable="false">
+  <rect {...mark.bar} fill="currentColor" />
+  <rect {...mark.stripe} class="mark-stripe" />
+  {mark.paths.map(d => <path d={d} fill="currentColor" />)}
+</svg>

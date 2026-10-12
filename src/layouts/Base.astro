@@ -1,5 +1,6 @@
 ---
 import '../styles/site.css';
+import BrandMark from '../components/BrandMark.astro';
 interface Props { title: string; description?: string }
 const { title, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
@@ -16,6 +17,11 @@ const canonical = new URL(path, Astro.site);
     <meta name="description" content={description} />
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/identity/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/identity/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/identity/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/identity/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <script is:inline>
       (() => {
         let preference = 'dark';
@@ -29,7 +35,7 @@ const canonical = new URL(path, Astro.site);
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="development-notice"><span class="notice-label">Development preview</span><span>Sample content · design in progress</span></div>
     <header class="site-header shell">
-      <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><span>Ben Davis<span class="brand-stripe" aria-hidden="true"></span></span><small>BEN DAVIS BUILDS</small></a>
+      <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
       <nav aria-label="Main navigation"><ul>{nav.map(([href, label]) => <li><a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href!)) ? 'page' : undefined}>{label}</a></li>)}</ul></nav>
       <div class="theme-control" hidden>
         <label for="theme-mode">Appearance</label>
@@ -40,7 +46,7 @@ const canonical = new URL(path, Astro.site);
     <footer class="site-footer shell">
       <div><strong>Ben Davis Builds</strong><p>A Built Signal development template.</p></div>
       <nav aria-label="Footer navigation"><a href="/writing/archive/">Archive</a><a href="/lab/">Simulated lab</a><a href="/contact/">Contact</a></nav>
-      <p class="fine-print">Provisional text wordmark · all prose and projects are samples.</p>
+      <p class="fine-print">Provisional BD identity · all prose and projects are samples.</p>
     </footer>
     <script>
       const selector = document.querySelector<HTMLSelectElement>('#theme-mode');

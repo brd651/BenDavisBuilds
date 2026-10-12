@@ -1,0 +1,7 @@
+---
+interface Props { variant?: 'systems' | 'notes' }
+const { variant = 'systems' } = Astro.props;
+---
+<div class={`project-artwork ${variant}`} aria-hidden="true">
+  {variant === 'systems' ? <svg viewBox="0 0 480 200" focusable="false"><g class="diagram-line"><path d="M100 100H240M240 100V45H380M240 100V155H380"/><rect x="42" y="70" width="116" height="60" rx="4"/><rect x="325" y="20" width="110" height="50" rx="4"/><rect x="325" y="130" width="110" height="50" rx="4"/></g><g class="artwork-detail"><path d="M62 91H136M62 108H112M345 41H415M345 151H400"/></g></svg> : <svg viewBox="0 0 480 200" focusable="false"><g class="diagram-line"><path d="M145 32H310V172H145Z M165 62H290M165 87H290M165 112H260M165 137H240"/><path d="M125 52V188H290"/></g><path class="artwork-detail" d="M332 70H382M332 94H365M332 118H390"/></svg>}
+</div>

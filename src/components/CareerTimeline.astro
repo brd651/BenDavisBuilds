@@ -1,0 +1,129 @@
+---
+import type { CareerStage } from '../data/career';
+interface Props { stages: readonly CareerStage[] }
+const { stages } = Astro.props;
+---
+<div class="career-timeline" data-career-timeline>
+  <ol class="career-stages">
+    {stages.map((stage, index) => <li id={stage.id} class:list={['career-stage', `stage-${stage.kind}`]} tabindex="-1">
+      {index < stages.length - 1 && <svg class="timeline-connector" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true"><path d="M1 0 V100" /><path class="connector-progress" d="M1 0 V100" pathLength="1" /></svg>}
+      <div class="stage-identity">
+        <p class="stage-type">{stage.kind === 'service' ? 'Service' : stage.kind === 'education' ? 'Education' : stage.kind === 'personal' ? 'Ongoing personal project' : 'Career chapter'}</p>
+        <p class="stage-organization">{stage.organization}</p>
+        <p class="stage-theme">{stage.theme}</p>
+      </div>
+      <span class="milestone" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+      <div class="stage-story">
+        <h3>{stage.role}</h3>
+        <p>{stage.summary}</p>
+        <details>
+          <summary>More from this chapter<span class="disclosure-icon" aria-hidden="true">+</span></summary>
+          <div class="stage-detail"><p>{stage.detail}</p></div>
+        </details>
+      </div>
+    </li>)}
+  </ol>
+</div>
+
+<script>
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll<HTMLElement>('[data-career-timeline]').forEach(timeline => {
+    const stages = [...timeline.querySelectorAll<HTMLElement>('.career-stage')];
+    let frame = 0;
+    let observer: IntersectionObserver | undefined;
+    let listening = false;
+    const update = () => {
+      frame = 0;
+      // Read geometry together before writing styles to avoid forced layout per segment.
+      const segments = stages.slice(0, -1).map(stage => {
+        const rail = stage.querySelector<SVGElement>('.timeline-connector')!;
+        const bounds = rail.getBoundingClientRect();
+        return { rail, offset: 1 - Math.max(0, Math.min(1, (innerHeight * .72 - bounds.top) / bounds.height)) };
+      });
+      segments.forEach(({ rail, offset }) => rail.style.setProperty('--line-offset', String(offset)));
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const configure = () => {
+      observer?.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      timeline.removeEventListener('toggle', schedule, true);
+      listening = false;
+      timeline.dataset.motion = 'false';
+      stages.forEach(stage => stage.classList.remove('is-seen'));
+      if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
+      timeline.dataset.motion = 'true';
+      observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-seen');
+            observer?.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: .1 });
+      stages.forEach(stage => observer!.observe(stage));
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('resize', schedule);
+      timeline.addEventListener('toggle', schedule, true);
+      listening = true;
+      schedule();
+    };
+    configure();
+    reducedMotion.addEventListener('change', configure);
+    // ResizeObserver keeps lines accurate when disclosures or text sizes change.
+    if ('ResizeObserver' in window) new ResizeObserver(() => { if (listening) schedule(); }).observe(timeline);
+  });
+</script>
+
+<style>
+  .career-stages { --stage-gap: 4.5rem; padding: 0; margin: 0; list-style: none; }
+  .career-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr); gap: 2rem; align-items: start; padding-bottom: var(--stage-gap); scroll-margin-top: 2.5rem; }
+  .career-stage:last-child { padding-bottom: 0; }
+  .timeline-connector { position: absolute; left: calc(50% - 1px); top: 2rem; width: 2px; height: 100%; overflow: visible; pointer-events: none; }
+  .timeline-connector path { stroke: var(--bs-border); stroke-width: 2; fill: none; vector-effect: non-scaling-stroke; }
+  .timeline-connector .connector-progress { stroke: var(--bs-accentText); }
+  [data-motion="true"] .connector-progress { stroke-dasharray: 1; stroke-dashoffset: var(--line-offset, 1); }
+  .stage-identity { grid-column: 1; text-align: right; padding-top: .25rem; }
+  .stage-type { font-size: .6875rem; text-transform: uppercase; letter-spacing: .15em; color: var(--bs-muted); margin-bottom: .7rem; }
+  .stage-organization { font-size: clamp(1.65rem, 3vw, 2.65rem); font-weight: 650; line-height: 1.1; letter-spacing: -.045em; margin-bottom: .9rem; }
+  .stage-theme { font-size: .875rem; color: var(--bs-muted); margin: 0; }
+  .milestone { grid-column: 2; display: grid; place-items: center; position: relative; width: 4rem; height: 4rem; border: 2px solid var(--bs-border); border-radius: 50%; background: var(--bs-page); font-size: .8125rem; font-weight: 650; font-variant-numeric: tabular-nums; z-index: 1; }
+  .stage-story { grid-column: 3; padding-top: .2rem; }
+  .stage-story h3 { font-size: clamp(1.3rem, 2vw, 1.65rem); line-height: 1.25; letter-spacing: -.025em; margin-bottom: 1rem; max-width: 25ch; }
+  .stage-story p { font-size: 1.0625rem; line-height: 1.8; color: var(--bs-muted); margin-bottom: 1rem; }
+  .career-stage:nth-child(even) .stage-identity { grid-column: 3; text-align: left; grid-row: 1; }
+  .career-stage:nth-child(even) .milestone { grid-row: 1; }
+  .career-stage:nth-child(even) .stage-story { grid-column: 1; grid-row: 1; }
+  .stage-service .stage-organization { border-right: 3px solid var(--bs-scarlet); padding-right: 1rem; }
+  .stage-personal .milestone { border-radius: 1rem; border-color: var(--bs-accentText); }
+  .stage-personal .stage-story { border-top: 2px solid var(--bs-brass); padding-top: 1.5rem; }
+  summary { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: .8125rem; padding: .6rem 0; cursor: pointer; border-bottom: 1px solid var(--bs-border); list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { text-decoration: underline; text-underline-offset: .2em; }
+  .disclosure-icon { font-size: 1.25rem; line-height: 1; }
+  details[open] .disclosure-icon { transform: rotate(45deg); }
+  .stage-detail { padding-top: 1rem; }
+  .stage-detail p { margin: 0; }
+  [data-motion="true"] .is-seen .milestone { border-color: var(--bs-accentText); background: var(--bs-surface); transition: border-color .45s ease; }
+  [data-motion="true"] .is-seen .stage-identity, [data-motion="true"] .is-seen .stage-story { animation: chapter-arrive .6s ease both; }
+  @keyframes chapter-arrive { from { opacity: .78; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 800px) {
+    .career-stages { --stage-gap: 3.5rem; }
+    .career-stage { grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: 1.25rem; row-gap: 1.1rem; }
+    .timeline-connector { left: calc(1.375rem - 1px); top: 1.375rem; }
+    .milestone { grid-column: 1; grid-row: 1; width: 2.75rem; height: 2.75rem; font-size: .6875rem; }
+    .stage-identity, .career-stage:nth-child(even) .stage-identity { grid-column: 2; grid-row: 1; text-align: left; }
+    .stage-story, .career-stage:nth-child(even) .stage-story { grid-column: 2; grid-row: 2; }
+    .career-stage:nth-child(even) .milestone { grid-column: 1; }
+    .stage-organization { font-size: 1.8rem; }
+    .stage-story p { font-size: 1rem; }
+    .stage-service .stage-organization { border-right: 0; border-left: 3px solid var(--bs-scarlet); padding-right: 0; padding-left: .75rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .connector-progress { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }
+    .stage-identity, .stage-story, .milestone { animation: none !important; transition: none !important; }
+  }
+  @media (forced-colors: active) { .timeline-connector path { stroke: CanvasText; } .milestone { border-color: CanvasText; } }
+</style>

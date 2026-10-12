@@ -25,5 +25,5 @@ try{
   await page.screenshot({path:new URL(`${name}.png`,out).pathname,omitBackground:true});await context.close();
  }
 }finally{await browser.close()}
-await writeFile(new URL('../public/site.webmanifest',import.meta.url),JSON.stringify({name:'Ben Davis Builds — Development',short_name:'Ben Davis',description:'Built Signal development template. Provisional identity and sample content.',start_url:'/',display:'browser',background_color:colors.navy,theme_color:colors.navy,icons:[{src:'/identity/app-icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:'/identity/app-icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'}]},null,2)+'\n');
+await writeFile(new URL('../public/manifest.json',import.meta.url),JSON.stringify({name:'Ben Davis Builds — Development',short_name:'Ben Davis',description:'Built Signal development template. Provisional identity and sample content.',start_url:'/',display:'browser',background_color:colors.navy,theme_color:colors.navy,icons:[{src:'/identity/app-icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:'/identity/app-icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'}]},null,2)+'\n');
 console.log('Provisional SVG variants and six raster sizes generated from shared geometry.');

@@ -4,8 +4,8 @@ import BrandMark from '../components/BrandMark.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
 import ThemeControl from '../components/ThemeControl.astro';
 import HeroViewport from '../components/HeroViewport.astro';
-interface Props { title: string; description?: string; homepageHero?: boolean }
-const { title, homepageHero = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
+interface Props { title: string; description?: string; homepageHero?: boolean; sampleContent?: boolean; socialMetadata?: boolean }
+const { title, homepageHero = false, sampleContent = true, socialMetadata = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
 const nav = [['/', 'Home'], ['/about/', 'About'], ['/writing/', 'Writing'], ['/projects/', 'Projects'], ['/mentorship/', 'Mentorship'], ['/contact/', 'Contact']];
 const path = Astro.url.pathname;
@@ -20,6 +20,16 @@ const canonical = new URL(path, Astro.site);
     <meta name="description" content={description} />
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <link rel="canonical" href={canonical} />
+    {socialMetadata && <>
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={`${title} · Ben Davis Builds`} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:site_name" content="Ben Davis Builds" />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content={`${title} · Ben Davis Builds`} />
+      <meta name="twitter:description" content={description} />
+    </>}
     <link rel="icon" type="image/svg+xml" href="/identity/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/identity/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/identity/favicon-16.png" />
@@ -36,7 +46,7 @@ const canonical = new URL(path, Astro.site);
   </head>
   <body class:list={[{ homepage: homepageHero }]}>
     <a class="skip-link" href="#main">Skip to content</a>
-    <div class="development-notice"><span class="notice-label">Development preview</span><span>Sample content · design in progress</span></div>
+    <div class="development-notice"><span class="notice-label">Development preview</span><span>{sampleContent ? 'Sample content · design in progress' : 'Sample content elsewhere · design in progress'}</span></div>
     <header class:list={["site-header", "shell", { "homepage-header": homepageHero }]}>
       <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
       <nav aria-label="Main navigation"><ul>{nav.map(([href, label]) => <li><a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href!)) ? 'page' : undefined}>{label}</a></li>)}</ul></nav>
@@ -48,7 +58,7 @@ const canonical = new URL(path, Astro.site);
     <footer class="site-footer shell">
       <div><strong>Ben Davis Builds</strong><p>A Built Signal development template.</p></div>
       <nav aria-label="Footer navigation"><a href="/writing/archive/">Archive</a><a href="/lab/">Simulated lab</a><a href="/contact/">Contact</a></nav>
-      <p class="fine-print">Provisional BD identity · all prose and projects are samples.</p>
+      <p class="fine-print">{sampleContent ? 'Provisional BD identity · all prose and projects are samples.' : 'Provisional BD identity · other pages contain sample content.'}</p>
     </footer>
     <script>
       const control = document.querySelector<HTMLDetailsElement>('.theme-control');

@@ -1,0 +1,67 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const philosophy = await getEntry('leadership', 'philosophy');
+if (!philosophy || philosophy.data.draft) throw new Error('Leadership copy must be present and approved for publication.');
+const { Content, headings } = await render(philosophy);
+const contents = headings.filter(heading => heading.depth === 2);
+---
+<Base title={philosophy.data.title} description={philosophy.data.description} sampleContent={false} socialMetadata>
+  <article class="leadership-page">
+    <header class="page-heading leadership-heading">
+      <p class="eyebrow signature-label">Leadership philosophy</p>
+      <h1>{philosophy.data.title}</h1>
+      <p class="lead">{philosophy.data.subtitle}</p>
+    </header>
+    <div class="leadership-layout">
+      <aside class="leadership-contents">
+        <nav aria-label="On this page">
+          <p class="eyebrow">On this page</p>
+          <ol>{contents.map(heading => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol>
+        </nav>
+      </aside>
+      <div class="prose leadership-prose"><Content /></div>
+    </div>
+    <nav class="leadership-more" aria-label="Continue exploring">
+      <a class="text-link" href="/about/">About Ben →</a>
+      <a class="text-link" href="/mentorship/">Mentorship →</a>
+      <a class="text-link" href="/writing/">Writing →</a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .leadership-page { margin-bottom: 5rem; }
+  .leadership-heading { max-width: 800px; border-top: 1px solid var(--bs-line); padding-bottom: 1rem; }
+  .leadership-heading h1 { margin-bottom: 1.25rem; }
+  .leadership-heading .lead { max-width: 48ch; }
+  .leadership-layout { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
+  .leadership-contents { padding-top: .5rem; border-top: 2px solid var(--bs-brass); }
+  .leadership-contents .eyebrow { margin-block: 1rem; }
+  .leadership-contents ol { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; }
+  .leadership-contents a { display: block; padding: .25rem 0; font-size: .875rem; line-height: 1.6; }
+  .leadership-prose { width: 100%; max-width: 65ch; min-width: 0; }
+  .leadership-prose :global(.leadership-section) { margin-top: 3.5rem; padding-top: 2rem; border-top: 1px solid var(--bs-line); scroll-margin-top: 2rem; }
+  .leadership-prose :global(h2) { margin-top: 0; line-height: 1.25; }
+  .leadership-prose :global(h2), .leadership-prose :global(h3) { scroll-margin-top: 2rem; }
+  .leadership-prose :global(.leadership-chapter) { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(h3) { font-size: clamp(1.35rem, 2vw, 1.65rem); line-height: 1.35; margin-bottom: 1.25rem; letter-spacing: -.025em; }
+  .leadership-prose :global(.leadership-operating) { padding: clamp(1rem, 3vw, 2rem); background: var(--bs-surface); border: 1px solid var(--bs-line); border-radius: 5px; }
+  .leadership-prose :global(.leadership-operating h2) { color: var(--bs-accentText); }
+  .leadership-prose :global(.leadership-operating ol) { padding-left: 1.5rem; margin-block: 2rem; }
+  .leadership-prose :global(.leadership-operating li) { padding: .75rem 0 .75rem .5rem; border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(.leadership-operating li::marker) { font-weight: 700; color: var(--bs-accentText); }
+  .leadership-prose :global(.leadership-integrity) { border-top: 2px solid var(--bs-brass); }
+  .leadership-prose :global(.leadership-transparency), .leadership-prose :global(.leadership-success) { padding-bottom: .5rem; }
+  .leadership-more { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--bs-line); }
+  @media (max-width: 900px) {
+    .leadership-layout { grid-template-columns: minmax(0, 1fr); }
+    .leadership-contents { max-width: 65ch; }
+    .leadership-contents ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1.5rem; }
+  }
+  @media (max-width: 500px) {
+    .leadership-contents ol { grid-template-columns: minmax(0, 1fr); }
+    .leadership-prose :global(.leadership-section) { margin-top: 2.5rem; }
+  }
+</style>

@@ -55,7 +55,7 @@ ssh "${ssh_args[@]}" "$target" "set -eu; ln -s '$site_root/releases/$release' '$
 base=${DEPLOY_HEALTH_URL%/}
 served=$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --max-time 15 "$base/health.txt")
 [[ $served == "$release" ]]
-for route in / /about/ /writing/ /writing/sample/ /writing/archive/ /projects/ /lab/ /mentorship/ /contact/; do
+for route in / /about/ /leadership/ /writing/ /writing/sample/ /writing/archive/ /projects/ /lab/ /mentorship/ /contact/; do
   [[ $(curl --silent --show-error --max-time 15 --output /dev/null --write-out '%{http_code}' "$base$route") == 200 ]]
 done
 [[ $(curl --silent --show-error --max-time 15 --output /dev/null --write-out '%{http_code}' "$base/nonexistent-release-check/") == 404 ]]

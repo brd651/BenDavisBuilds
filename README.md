@@ -1,33 +1,48 @@
-# Built Signal development template
+# Ben Davis Builds
 
-Astro static pages, strict TypeScript, Markdown collections, and vanilla CSS using
-the approved Built Signal semantic tokens. All content is clearly labeled sample
-Lorem Ipsum; the text wordmark is provisional. This is not a production launch.
+**Technical leadership. Cybersecurity. Applied AI. Practical engineering.**
 
-Use the Node version in `.nvmrc` and the pinned npm version in `package.json`.
+**Website:** [bendavisbuilds.com](https://bendavisbuilds.com)
 
-```sh
-npm ci
-npm run validate:tokens
-npm run check
-npm run build
-npm run test:release
-npx playwright install chromium
-npm run test:browser
-npm run validate:budget
-```
+Ben Davis Builds is my personal website, technical writing space, and engineering portfolio. It brings together lessons from sales engineering leadership, hands-on cybersecurity and AI experimentation, and a simple belief: staying curious and building things makes you a better technical leader.
 
-`npm run dev` starts local development; `npm run preview` serves the built files.
-No React, server adapter, database, tracking, or live lab connection is included.
-`PUBLIC_NOINDEX` defaults to `true`; only an explicit `false` enables indexing.
-Operational documentation and real inventory belong outside Git in
-`~/Website-LocalDocs/`. Infrastructure examples contain no real inventory.
-See `AGENTS.md` for contribution and review requirements.
+The website is also a project in its own right—an opportunity to explore modern web development, accessibility, performance, and AI-assisted engineering while documenting what I learn.
 
-With the preview running, `npm run screenshots` saves dark/light screenshots at
-390/768/1440px exclusively to the existing private documentation directory.
-This command is local-only and deliberately refuses to run in CI.
+## Explore
 
-Release safety tests use a simulated transport and do not certify live SSH,
-HTTP/TLS, or a host rollback. CI deployment is intentionally disabled until
-dedicated CI credentials, verified host keys, and the release branch are set.
+| Area | Focus |
+| --- | --- |
+| **Writing** | Sales engineering, leadership, cybersecurity, applied AI, and practical technical perspectives. |
+| **Projects & Homelab** | Experiments in infrastructure, automation, security, and agentic systems. |
+| **Technical Archive** | Earlier engineering articles and experiments, preserved with their historical context. |
+| **Mentorship** | Guidance and resources for people growing in sales engineering, cybersecurity, and AI. |
+
+## Built Signal
+
+**Built Signal** is the visual identity behind the website: dark-mode-first, technically influenced, and deliberately understated.
+
+The design combines deep navy, warm ivory, restrained Classic Ember and brass accents, and a narrow scarlet stripe referencing my Marine Corps background. A clean geometric BD monogram anchors the identity, while subtle technical diagrams and motion give the project areas a more exploratory feel.
+
+The goal is a balance of executive clarity and engineering personality—not a corporate brochure or a movie-style hacking console.
+
+## Technology
+
+| Layer | Technology | Purpose |
+| --- | --- | --- |
+| Web framework | [Astro](https://astro.build/) | Fast, content-focused pages with static generation. |
+| Language | TypeScript | Typed components, content models, and browser interactions. |
+| Design system | HTML, CSS, and semantic tokens | Responsive layouts and consistent light/dark themes. |
+| Content | Markdown and Astro content collections | Organized, versioned technical writing. |
+| Interactive experiences | SVG, CSS, and selective React | Lightweight diagrams, animation, and richer project views where useful. |
+| Web serving | Caddy on Ubuntu / Akamai Cloud | Lightweight HTTPS hosting. |
+| Engineering workflow | GitHub and GitHub Actions | Source history, automated checks, and repeatable delivery. |
+
+The guiding principle is **static-first, interactive where it adds value**: keep articles fast and readable while leaving room for more advanced technical experiences.
+
+## What I'm exploring
+
+Beyond the website itself, I'm interested in how technical teams work, how AI can support real engineering workflows, and how thoughtful automation can make systems easier to operate and recover. The projects and articles here are where I put those ideas to the test.
+
+---
+
+**Ben Davis Builds** · [bendavisbuilds.com](https://bendavisbuilds.com)

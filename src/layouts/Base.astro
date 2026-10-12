@@ -2,6 +2,7 @@
 import '../styles/site.css';
 import BrandMark from '../components/BrandMark.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
+import ThemeControl from '../components/ThemeControl.astro';
 interface Props { title: string; description?: string; homepageHero?: boolean }
 const { title, homepageHero = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
@@ -39,10 +40,7 @@ const canonical = new URL(path, Astro.site);
       <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
       <nav aria-label="Main navigation"><ul>{nav.map(([href, label]) => <li><a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href!)) ? 'page' : undefined}>{label}</a></li>)}</ul></nav>
       {homepageHero && <HomepageSearch />}
-      <div class="theme-control" hidden>
-        <label for="theme-mode">Appearance</label>
-        <select id="theme-mode"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
-      </div>
+      <ThemeControl />
     </header>
     <main id="main" class:list={["shell", { "homepage-main": homepageHero }]} tabindex="-1"><slot /></main>
     <footer class="site-footer shell">
@@ -51,23 +49,40 @@ const canonical = new URL(path, Astro.site);
       <p class="fine-print">Provisional BD identity · all prose and projects are samples.</p>
     </footer>
     <script>
-      const selector = document.querySelector<HTMLSelectElement>('#theme-mode');
-      const control = document.querySelector<HTMLElement>('.theme-control');
+      const control = document.querySelector<HTMLDetailsElement>('.theme-control');
+      const trigger = control?.querySelector<HTMLElement>('summary');
+      const choices = control?.querySelectorAll<HTMLButtonElement>('[data-theme-choice]');
       const media = window.matchMedia('(prefers-color-scheme: light)');
       type Theme = 'dark' | 'light' | 'system';
       let preference = (document.documentElement.dataset.themePreference || 'dark') as Theme;
       function applyTheme() {
-        document.documentElement.dataset.theme = preference === 'system' ? (media.matches ? 'light' : 'dark') : preference;
+        const theme = preference === 'system' ? (media.matches ? 'light' : 'dark') : preference;
+        document.documentElement.dataset.theme = theme;
         document.documentElement.dataset.themePreference = preference;
-        if (selector) selector.value = preference;
+        choices?.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === preference)));
+        if (trigger) trigger.title = `Appearance: ${preference}${preference === 'system' ? ` (${theme})` : ''}`;
       }
-      if (selector && control) {
+      if (control && trigger && choices) {
         applyTheme();
         control.hidden = false;
-        selector.addEventListener('change', () => {
-          preference = selector.value as Theme;
+        choices.forEach(button => button.addEventListener('click', () => {
+          const selected = button.dataset.themeChoice;
+          if (selected !== 'dark' && selected !== 'light' && selected !== 'system') return;
+          preference = selected;
           try { localStorage.setItem('built-signal-theme', preference); } catch {}
           applyTheme();
+          control.open = false;
+          trigger.focus();
+        }));
+        control.addEventListener('keydown', event => {
+          if (event.key === 'Escape' && control.open) {
+            event.preventDefault();
+            control.open = false;
+            trigger.focus();
+          }
+        });
+        document.addEventListener('click', event => {
+          if (event.target instanceof Node && !control.contains(event.target)) control.open = false;
         });
         media.addEventListener('change', () => { if (preference === 'system') applyTheme(); });
       }

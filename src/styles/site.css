@@ -25,8 +25,6 @@ p { margin-bottom: 1.2rem; }
 nav ul { display: flex; flex-wrap: wrap; padding: 0; margin: 0; gap: .3rem 1.15rem; list-style: none; }
 .site-header nav a { display: inline-block; padding: .4rem 0; font-size: .875rem; color: var(--bs-muted); text-decoration: none; }
 .site-header nav a[aria-current="page"] { color: var(--bs-text); text-decoration: underline; text-decoration-thickness: 2px; }
-.theme-control { display: flex; flex-direction: column; gap: .25rem; }
-.theme-control label { font-size: .75rem; color: var(--bs-muted); }
 select { background: var(--bs-page); color: var(--bs-text); border: 1px solid var(--bs-border); border-radius: 4px; padding: .4rem .7rem; font: inherit; font-size: .875rem; }
 .skip-link { position: absolute; top: .5rem; left: .5rem; padding: .75rem 1rem; background: var(--bs-action); color: var(--bs-onAction); z-index: 5; transform: translateY(-180%); }
 .skip-link:focus { transform: translateY(0); }

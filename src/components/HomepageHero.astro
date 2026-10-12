@@ -35,7 +35,7 @@ const [avif, webp] = await Promise.all([
       <div class="button-row"><a class="button primary" href="/writing/">Explore Writing <span aria-hidden="true">→</span></a><a class="button" href="/projects/">View Projects</a></div>
     </div>
     <div class="hero-hud"><svg class="hero-hud-frame" viewBox="0 0 190 240" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M24 1H12L1 12V52M1 186V228L12 239H30M166 1H178L189 12V52M189 188V228L178 239H158M1 112V127M189 112V127"/></svg><ul aria-label="Built Signal themes"><li>Build</li><li>Secure</li><li>Optimize</li><li>Explore</li></ul></div>
-    <div class="hero-bottom"><ul class="hero-pillars" aria-label="Built Signal focus"><li>People</li><li>Systems</li><li>Execution</li><li>Impact</li></ul><label class="hero-motion"><input id="hero-motion-pause" type="checkbox" /><span class="motion-label">Pause contour motion</span><span class="motion-reduced">Motion off (system preference)</span></label></div>
+    <div class="hero-bottom"><ul class="hero-pillars" aria-label="Built Signal focus"><li>People</li><li>Systems</li><li>Execution</li><li>Impact</li></ul></div>
   </div>
 </section>
 <style>
@@ -61,10 +61,6 @@ const [avif, webp] = await Promise.all([
   .hero-bottom { position: relative; z-index: 1; grid-column: 1/-1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
   .hero-pillars { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; list-style: none; margin: 0; padding: 0; text-transform: uppercase; letter-spacing: .2em; font-size: .8125rem; }
   .hero-pillars li+li::before { content: '/'; color: var(--bs-scarlet); margin-right: 1.5rem; }
-  .hero-motion { color: var(--hero-ivory); background: color-mix(in srgb,var(--hero-navy) 70%,transparent); padding: .3rem .5rem; border-radius: 3px; display: flex; align-items: center; gap: .5rem; font-size: .8125rem; cursor: pointer; }
-  .hero-motion input { width: 1.1rem; height: 1.1rem; accent-color: var(--bs-action); flex-shrink: 0; }
-  .motion-reduced { display: none; }
-  .built-hero:has(#hero-motion-pause:checked) :global(.contour-highlight) { animation-play-state: paused; }
   :global([data-theme="light"]) .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 96%,transparent) 34%,color-mix(in srgb,var(--bs-page) 65%,transparent) 50%,transparent 72%); }
   @media (min-width:1001px) {
     .built-hero { min-height: var(--home-hero-height); }
@@ -90,6 +86,5 @@ const [avif, webp] = await Promise.all([
     :global([data-theme="light"]) .hero-shade { display: none; }
     :global([data-theme="light"]) .hero-bottom { grid-row: 3; grid-column: 1; margin: 1.5rem 1rem; }
   }
-  @media (prefers-reduced-motion:reduce) { .hero-motion input,.motion-label { display: none; } .motion-reduced { display: inline; } }
   @media (forced-colors:active) { .hero-background,.hero-shade { display: none; } .built-hero { border-color: CanvasText; } }
 </style>

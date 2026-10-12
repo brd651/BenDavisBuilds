@@ -1,3 +1,4 @@
+import { chooseTheme } from './theme';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -29,17 +30,17 @@ test('dark first visit, explicit persistence, System follows OS only when select
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByLabel('Appearance').selectOption('light');
+  await chooseTheme(page, 'light');
   await page.goto('/writing/sample/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByLabel('Appearance').selectOption('system');
+  await chooseTheme(page, 'system');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.reload();
-  await expect(page.getByLabel('Appearance')).toHaveValue('system');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-preference', 'system');
 });
 
 test('storage failure preserves usable theme control', async ({ page }) => {
@@ -48,7 +49,7 @@ test('storage failure preserves usable theme control', async ({ page }) => {
   });
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByLabel('Appearance').selectOption('light');
+  await chooseTheme(page, 'light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
@@ -60,8 +61,9 @@ test('keyboard skip link and theme selection', async ({ page }) => {
   await expect(page.locator('main')).toBeFocused();
   await page.getByLabel('Appearance').focus();
   expect(await page.getByLabel('Appearance').evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
-  await page.keyboard.press('Home');
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });

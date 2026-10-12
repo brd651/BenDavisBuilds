@@ -1,3 +1,4 @@
+import { chooseTheme } from './theme';
 import { test, expect } from '@playwright/test';
 
 declare global { interface Window { heroLayoutShift: number } }
@@ -20,7 +21,7 @@ test('hero copy, actions and focus labels stay selectable HTML', async ({ page, 
   expect((await page.request.get('/design/reference/hero-reference.png')).status()).toBe(404);
 });
 
-test('contours have slow traveling highlights, a pause control and a reduced-motion fallback', async ({ page }) => {
+test('contours have slow traveling highlights and a reduced-motion fallback without a pause control', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/');
   const overlay = page.locator('.topographic-overlay');
@@ -31,13 +32,9 @@ test('contours have slow traveling highlights, a pause control and a reduced-mot
   await expect(overlay.locator('.contour-highlight')).toHaveCount(4);
   const durations = await overlay.locator('.contour-highlight').evaluateAll(paths => paths.map(path => Number.parseFloat(getComputedStyle(path).animationDuration)));
   expect(durations.every(seconds => seconds >= 20 && seconds <= 35)).toBe(true);
-  await page.getByLabel('Pause contour motion').check();
-  expect(await overlay.locator('.contour-highlight').first().evaluate(el => getComputedStyle(el).animationPlayState)).toBe('paused');
-  await page.getByLabel('Pause contour motion').uncheck();
-  expect(await overlay.locator('.contour-highlight').first().evaluate(el => getComputedStyle(el).animationPlayState)).toBe('running');
+  await expect(page.getByLabel('Pause contour motion')).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(await overlay.locator('.contour-highlight').first().evaluate(el => getComputedStyle(el).animationName)).toBe('none');
-  await expect(page.getByText('Motion off (system preference)')).toBeVisible();
 });
 
 test('homepage search filters real pages and Escape returns keyboard focus', async ({ page }) => {
@@ -57,7 +54,7 @@ test('homepage search filters real pages and Escape returns keyboard focus', asy
   await expect(page.locator('.homepage-search, .topographic-overlay')).toHaveCount(0);
 });
 
-test('without JavaScript search navigation and motion pause still work', async ({ browser }) => {
+test('without JavaScript search navigation still works', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'no-preference' });
   try {
     const page = await context.newPage();
@@ -65,8 +62,6 @@ test('without JavaScript search navigation and motion pause still work', async (
     await page.getByLabel('Search this site').click();
     await expect(page.locator('.homepage-search').getByRole('link', { name: 'Writing', exact: true })).toBeVisible();
     await expect(page.getByLabel('Search pages')).toBeHidden();
-    await page.getByLabel('Pause contour motion').check();
-    expect(await page.locator('.contour-highlight').first().evaluate(el => getComputedStyle(el).animationPlayState)).toBe('paused');
   } finally { await context.close(); }
 });
 
@@ -161,7 +156,7 @@ for (const [width, height, density] of [[2560, 1440, 1], [2560, 1320, 1.5], [384
 test('desktop resizing has no layout jumps at former image and wide-layout thresholds', async ({ page }) => {
   await page.goto('/');
   for (const theme of ['dark', 'light']) {
-    await page.getByLabel('Appearance').selectOption(theme);
+    await chooseTheme(page, theme);
     for (const breakpoint of [1400, 1800, 1920, 2560]) {
       const frames = [];
       for (const width of [breakpoint - 1, breakpoint, breakpoint + 1]) {
@@ -198,15 +193,13 @@ test('enlarged desktop text remains reachable without horizontal overflow', asyn
   await page.goto('/');
   await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
   for (const theme of ['dark', 'light']) {
-    await page.getByLabel('Appearance').selectOption(theme);
+    await chooseTheme(page, theme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     for (const name of ['Explore Writing', 'View Projects']) {
       const button = page.getByRole('link', { name, exact: false }).first();
       await button.scrollIntoViewIfNeeded();
       await expect(button).toBeInViewport();
     }
-    await page.getByLabel('Pause contour motion').scrollIntoViewIfNeeded();
-    await expect(page.getByLabel('Pause contour motion')).toBeInViewport();
   }
 });
 

@@ -152,3 +152,19 @@ figcaption { color: var(--bs-muted); font-size: .875rem; margin: .5rem; }
 .wordmark { max-width: 100%; flex-shrink: 1; }
 .wordmark-type, .hero-identity > div { min-width: 0; }
 .hero-identity { min-width: 0; }
+
+/* Fluid homepage scale keeps the desktop layout continuous through 4K. */
+@media (min-width: 1001px) {
+  html:has(body.homepage) { font-size: clamp(1rem, calc(.7rem + .333333vw), 1.5rem); }
+  body.homepage {
+    --home-shell-width: clamp(75rem, 62.5vw, 100rem);
+    --home-header-height: 7rem;
+    --home-notice-height: 2.625rem;
+    /* Ramp up from the tablet height before reaching the viewport limit. */
+    --home-hero-height: max(700px, min(calc(100svh - var(--home-header-height) - var(--home-notice-height)), calc(700px + (100vw - 1000px) * .5)));
+  }
+  .homepage .shell:not(.homepage-main) { width: min(calc(100% - 3rem), var(--home-shell-width)); }
+  .homepage .development-notice { min-height: var(--home-notice-height); align-items: center; }
+  body.homepage .homepage-header { min-height: var(--home-header-height); }
+  .homepage .card p, .homepage .feature-copy p { max-width: 55ch; }
+}

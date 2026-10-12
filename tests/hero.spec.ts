@@ -111,8 +111,8 @@ test('hero uses responsive artwork and open HUD framing', async ({ page }) => {
 });
 
 
-for (const [width, height, density] of [[2560, 1440, 1], [2560, 1440, 1.5], [3840, 2160, 1], [1920, 1080, 2]]) {
-  test(`large hero preserves scene at ${width}px and ${density}x density`, async ({ browser }) => {
+for (const [width, height, density] of [[2560, 1440, 1], [2560, 1320, 1.5], [3840, 2160, 1], [3840, 2040, 1], [1920, 960, 2]]) {
+  test(`large hero preserves scene at ${width}×${height}px and ${density}x density`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: density });
     try {
       const page = await context.newPage();
@@ -124,13 +124,23 @@ for (const [width, height, density] of [[2560, 1440, 1], [2560, 1440, 1.5], [384
         const box = el.getBoundingClientRect();
         const scale = Math.max(box.width / el.width, box.height / el.height);
         const drawn = { width: el.width * scale, height: el.height * scale };
-        // Wide view is centered horizontally and top-aligned; landmarks are normalized source coordinates.
-        const landmark = (x: number, y: number) => ({ x: x * drawn.width - (drawn.width - box.width) / 2, y: y * drawn.height });
+        // Account for object-position when checking mountain peak and hiker head/feet.
+        const [horizontal, vertical] = getComputedStyle(el).objectPosition.split(' ').map(Number.parseFloat);
+        const landmark = (x: number, y: number) => ({ x: x * drawn.width - (drawn.width - box.width) * horizontal! / 100,
+          y: y * drawn.height - (drawn.height - box.height) * vertical! / 100 });
         return { width: box.width, height: box.height, encodedWidth: el.width, source: el.currentSrc,
           position: getComputedStyle(el).objectPosition, points: [landmark(.287, .165), landmark(.79, .32), landmark(.79, .745)] };
       });
       expect(framing.width).toBeLessThanOrEqual(framing.encodedWidth);
-      expect(framing.position).toBe('50% 0%');
+      // The complete hero, including bottom labels and controls, fits below the header.
+      const heroBox = await page.locator('.built-hero').boundingBox();
+      expect(heroBox!.y + heroBox!.height).toBeLessThanOrEqual(height + 1);
+      const shells = await page.locator('.homepage-header, .hero-inner, .homepage-main > .shell, .site-footer').evaluateAll(elements =>
+        elements.map(el => { const box = el.getBoundingClientRect(); return { x: box.x, width: box.width }; }));
+      for (const shell of shells) {
+        expect(Math.abs(shell.x - shells[0]!.x)).toBeLessThan(1);
+        expect(Math.abs(shell.width - shells[0]!.width)).toBeLessThan(1);
+      }
       for (const point of framing.points) {
         expect(point.x).toBeGreaterThanOrEqual(0);
         expect(point.x).toBeLessThanOrEqual(framing.width);
@@ -138,7 +148,7 @@ for (const [width, height, density] of [[2560, 1440, 1], [2560, 1440, 1.5], [384
         expect(point.y).toBeLessThanOrEqual(framing.height);
       }
       if (width * density >= 3840) {
-        const srcset = await page.locator('source[type="image/avif"][media]').getAttribute('srcset');
+        const srcset = await page.locator('source[type="image/avif"]:not([media])').getAttribute('srcset');
         const largest = srcset?.split(',').find(candidate => candidate.trim().endsWith('3840w'))?.trim().split(' ')[0];
         expect(framing.source).toBe(new URL(largest!, page.url()).href);
       }
@@ -146,3 +156,117 @@ for (const [width, height, density] of [[2560, 1440, 1], [2560, 1440, 1.5], [384
     } finally { await context.close(); }
   });
 }
+
+
+test('desktop resizing has no layout jumps at former image and wide-layout thresholds', async ({ page }) => {
+  await page.goto('/');
+  for (const theme of ['dark', 'light']) {
+    await page.getByLabel('Appearance').selectOption(theme);
+    for (const breakpoint of [1400, 1800, 1920, 2560]) {
+      const frames = [];
+      for (const width of [breakpoint - 1, breakpoint, breakpoint + 1]) {
+        await page.setViewportSize({ width, height: 1080 });
+        frames.push(await page.locator('.homepage-header, .hero-inner, .hero-foreground, .hero-hud, .hero-bottom, h1').evaluateAll(elements =>
+          elements.map(el => { const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; })));
+      }
+      for (let frame = 1; frame < frames.length; frame++) for (let element = 0; element < frames[frame]!.length; element++) {
+        const before = frames[frame - 1]![element]!;
+        const after = frames[frame]![element]!;
+        for (const dimension of ['x', 'y', 'width', 'height'] as const)
+          expect(Math.abs(after[dimension] - before[dimension]), `${theme} ${breakpoint}px element ${element} ${dimension}`).toBeLessThan(3);
+      }
+    }
+  }
+});
+
+test('4K homepage type scales with the shell while reading pages retain their size', async ({ page }) => {
+  const sizes: number[] = [];
+  for (const width of [1440, 1920, 2560, 3840]) {
+    await page.setViewportSize({ width, height: 2160 });
+    await page.goto('/');
+    sizes.push(await page.locator('h1').evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize)));
+  }
+  expect(sizes[3]!).toBeGreaterThan(sizes[0]! * 1.4);
+  expect(sizes[3]!).toBeLessThanOrEqual(60);
+  expect(sizes.every((size, index) => index === 0 || size >= sizes[index - 1]!)).toBe(true);
+  await page.goto('/writing/sample/');
+  expect(await page.locator('html').evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize))).toBe(16);
+});
+
+test('enlarged desktop text remains reachable without horizontal overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 960 });
+  await page.goto('/');
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+  for (const theme of ['dark', 'light']) {
+    await page.getByLabel('Appearance').selectOption(theme);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const name of ['Explore Writing', 'View Projects']) {
+      const button = page.getByRole('link', { name, exact: false }).first();
+      await button.scrollIntoViewIfNeeded();
+      await expect(button).toBeInViewport();
+    }
+    await page.getByLabel('Pause contour motion').scrollIntoViewIfNeeded();
+    await expect(page.getByLabel('Pause contour motion')).toBeInViewport();
+  }
+});
+
+
+test('the tablet-to-desktop boundary does not jump hero height in tall windows', async ({ page }) => {
+  await page.goto('/');
+  for (const height of [900, 1080, 2160]) {
+    const heights = [];
+    for (const width of [1000, 1001, 1002]) {
+      await page.setViewportSize({ width, height });
+      heights.push((await page.locator('.built-hero').boundingBox())!.height);
+    }
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(3);
+  }
+});
+
+
+test('image-source crossover preserves composition at the tablet boundary', async ({ page }) => {
+  await page.goto('/');
+  for (const height of [900, 1080]) {
+    const points: { x: number; y: number }[][] = [];
+    for (const width of [1000, 1001]) {
+      await page.setViewportSize({ width, height });
+      const image = page.locator('.hero-background img');
+      await image.evaluate(el => (el as HTMLImageElement).decode());
+      expect(await image.evaluate(el => (el as HTMLImageElement).currentSrc)).toContain('hero2-ai-restored-4k');
+      points.push(await image.evaluate(el => {
+        const image = el as HTMLImageElement;
+        const box = image.getBoundingClientRect();
+        const scale = Math.max(box.width / image.width, box.height / image.height);
+        const [horizontal, vertical] = getComputedStyle(image).objectPosition.split(' ').map(Number.parseFloat);
+        return [[.287, .165], [.79, .32], [.79, .745]].map(([x, y]) => ({
+          x: x! * image.width * scale - (image.width * scale - box.width) * horizontal! / 100,
+          y: y! * image.height * scale - (image.height * scale - box.height) * vertical! / 100,
+        }));
+      }));
+    }
+    for (let landmark = 0; landmark < points[0]!.length; landmark++) {
+      expect(Math.abs(points[1]![landmark]!.x - points[0]![landmark]!.x)).toBeLessThan(3);
+      expect(Math.abs(points[1]![landmark]!.y - points[0]![landmark]!.y)).toBeLessThan(3);
+    }
+  }
+});
+
+
+test('high-density mobile screens do not download desktop-sized hero encodings', async ({ browser }) => {
+  for (const density of [1.75, 3]) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: density });
+    try {
+      const page = await context.newPage();
+      await page.goto('http://127.0.0.1:4321/');
+      const source = await page.locator('.hero-background img').evaluate(async el => {
+        const image = el as HTMLImageElement;
+        await image.decode();
+        return image.currentSrc;
+      });
+      const candidates = await page.locator('source[type="image/avif"][media]').getAttribute('srcset');
+      expect(candidates!.split(',').some(candidate => source === new URL(candidate.trim().split(' ')[0]!, page.url()).href)).toBe(true);
+      const response = await page.request.get(source);
+      expect((await response.body()).byteLength).toBeLessThan(100_000);
+    } finally { await context.close(); }
+  }
+});

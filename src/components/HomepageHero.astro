@@ -1,31 +1,30 @@
 ---
 import { getImage } from 'astro:assets';
 import heroArtwork from '../../design/artwork/hero2-ai-restored-4k.png';
-import originalArtwork from '../../design/reference/hero2.png';
 import TopographicOverlay from './TopographicOverlay.astro';
 import tokens from '../../built_signal_v1/design/built-signal.tokens.json';
-// Retain the original small-screen artwork; use AI-restored detail on wide/retina desktops.
+// Encode one composition at every size; source selection changes detail, never scenery.
 const { navy, ivory } = tokens.referenceSwatches;
 const sizes = '(max-width: 700px) 1140px, (max-width: 1245px) 1245px, 100vw';
-const desktopMedia = '(min-width: 1800px), (min-width: 1400px) and (min-resolution: 1.5dppx)';
-async function variants(src: typeof heroArtwork, widths: number[], format: 'avif' | 'webp', quality?: number) {
-  const images = await Promise.all(widths.map(width => getImage({ src, width, format, quality })));
-  return { srcset: images.map((image, index) => `${image.src} ${widths[index]}w`).join(', '), fallback: images.at(-1)!.src };
+async function variants(src: typeof heroArtwork, widths: number[], format: 'avif' | 'webp') {
+  const images = await Promise.all(widths.map(width => getImage({ src, width, format, quality: width > 1672 ? 88 : undefined })));
+  const srcset = (limit: number) => images.slice(0, limit).map((image, index) => `${image.src} ${widths[index]}w`).join(', ');
+  return { srcset: srcset(images.length), smallSrcset: srcset(4), smallFallback: images[3]!.src };
 }
-const [desktopAvif, desktopWebp, smallAvif, smallWebp] = await Promise.all([
-  variants(heroArtwork, [1920, 2560, 3840], 'avif', 88),
-  variants(heroArtwork, [1920, 2560, 3840], 'webp', 88),
-  variants(originalArtwork, [640, 960, 1280, originalArtwork.width], 'avif'),
-  variants(originalArtwork, [640, 960, 1280, originalArtwork.width], 'webp'),
+const widths = [640, 960, 1280, 1672, 1920, 2560, 3840];
+const [avif, webp] = await Promise.all([
+  variants(heroArtwork, widths, 'avif'),
+  variants(heroArtwork, widths, 'webp'),
 ]);
 ---
 <section class="built-hero" aria-labelledby="hero-heading" style={`--hero-navy: ${navy}; --hero-ivory: ${ivory}; --hero-source-width: ${heroArtwork.width}px`}>
   <div class="hero-background" aria-hidden="true"><picture>
-    <source media={desktopMedia} type="image/avif" srcset={desktopAvif.srcset} sizes={sizes} />
-    <source media={desktopMedia} type="image/webp" srcset={desktopWebp.srcset} sizes={sizes} />
-    <source type="image/avif" srcset={smallAvif.srcset} sizes={sizes} />
-    <source type="image/webp" srcset={smallWebp.srcset} sizes={sizes} />
-    <img src={smallWebp.fallback} srcset={smallWebp.srcset} sizes={sizes} width={heroArtwork.width} height={heroArtwork.height} alt="" loading="eager" decoding="async" fetchpriority="high" />
+    <!-- Cap high-density small screens; use the same composition at every resolution. -->
+    <source media="(max-width: 1000px)" type="image/avif" srcset={avif.smallSrcset} sizes={sizes} />
+    <source media="(max-width: 1000px)" type="image/webp" srcset={webp.smallSrcset} sizes={sizes} />
+    <source type="image/avif" srcset={avif.srcset} sizes={sizes} />
+    <source type="image/webp" srcset={webp.srcset} sizes={sizes} />
+    <img src={webp.smallFallback} srcset={webp.smallSrcset} sizes={sizes} width={heroArtwork.width} height={heroArtwork.height} alt="" loading="eager" decoding="async" fetchpriority="high" />
   </picture></div>
   <div class="hero-shade" aria-hidden="true"></div>
   <TopographicOverlay />
@@ -56,11 +55,11 @@ const [desktopAvif, desktopWebp, smallAvif, smallWebp] = await Promise.all([
   .button { min-height: 52px; padding: .85rem 1.5rem; font-size: 1rem; background: var(--bs-page); }
   .button.primary { background: var(--bs-action); }
   .hero-hud { position: relative; isolation: isolate; margin: -2rem 0 0; list-style: none; width: 165px; padding: 1.5rem .7rem; align-self: start; justify-self: end; display: grid; gap: 1.1rem; border: 0; text-align: center; text-transform: uppercase; letter-spacing: .22em; font-size: .875rem; color: var(--hero-ivory); }
-  .hero-hud::before { content: ''; position: absolute; inset: -.4rem -.6rem; z-index: -1; background: radial-gradient(ellipse,color-mix(in srgb,var(--hero-navy) 66%,transparent) 15%,color-mix(in srgb,var(--hero-navy) 44%,transparent) 65%,transparent 100%); }
+  .hero-hud::before { content: ''; position: absolute; inset: -.4rem -.6rem; z-index: -1; background: radial-gradient(ellipse,color-mix(in srgb,var(--hero-navy) 76%,transparent) 15%,color-mix(in srgb,var(--hero-navy) 60%,transparent) 65%,transparent 100%); }
   .hero-hud ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
   .hero-hud-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; stroke: var(--hero-ivory); stroke-width: 1; opacity: .48; }
   .hero-hud-frame path { vector-effect: non-scaling-stroke; }
-  .hero-bottom { grid-column: 1/-1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+  .hero-bottom { position: relative; z-index: 1; grid-column: 1/-1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
   .hero-pillars { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; list-style: none; margin: 0; padding: 0; text-transform: uppercase; letter-spacing: .2em; font-size: .8125rem; }
   .hero-pillars li+li::before { content: '/'; color: var(--bs-scarlet); margin-right: 1.5rem; }
   .hero-motion { color: var(--hero-ivory); background: color-mix(in srgb,var(--hero-navy) 70%,transparent); padding: .3rem .5rem; border-radius: 3px; display: flex; align-items: center; gap: .5rem; font-size: .8125rem; cursor: pointer; }
@@ -68,13 +67,17 @@ const [desktopAvif, desktopWebp, smallAvif, smallWebp] = await Promise.all([
   .motion-reduced { display: none; }
   .built-hero:has(#hero-motion-pause:checked) :global(.contour-highlight) { animation-play-state: paused; }
   :global([data-theme="light"]) .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 96%,transparent) 34%,color-mix(in srgb,var(--bs-page) 65%,transparent) 50%,transparent 72%); }
-  @media (min-width:1800px) {
-    .built-hero { min-height: clamp(900px,calc(min(100vw,var(--hero-source-width)) * .5),1920px); }
-    .hero-background :global(img) { object-position: center top; }
-    .hero-inner { width: calc(100% - 12vw); max-width: 3600px; padding-top: clamp(5.5rem,6vw,14rem); }
-    .hero-foreground { align-self: start; margin-top: clamp(2rem,6vw,14rem); }
-    .hero-shade { background: linear-gradient(90deg,color-mix(in srgb,var(--hero-navy) 72%,transparent),color-mix(in srgb,var(--hero-navy) 60%,transparent) calc(6vw + 620px),transparent calc(6vw + 950px)); }
-    :global([data-theme="light"]) .hero-shade { background: linear-gradient(90deg,var(--bs-page),color-mix(in srgb,var(--bs-page) 96%,transparent) calc(6vw + 620px),transparent calc(6vw + 950px)); }
+  @media (min-width:1001px) {
+    .built-hero { min-height: var(--home-hero-height); }
+    .hero-background :global(img) { object-position: 72% 8%; }
+    .hero-inner { min-height: calc(var(--home-hero-height) - 2px); padding-block: clamp(3rem,calc(4rem - (100vw - 1000px) * .04),4rem) 2rem; grid-template-columns: minmax(0,1fr) clamp(155px,calc(155px + (100vw - 1000px) * .0875),11.875rem); gap: clamp(2rem,calc(2rem + (100vw - 1000px) * .04),3rem); }
+    .hero-foreground { position: relative; isolation: isolate; align-self: center; max-width: 38.75rem; margin: 0; }
+    .hero-foreground::before { content: ''; position: absolute; inset: -2rem -3rem; z-index: -1; background: var(--hero-navy); opacity: .82; mask-image: linear-gradient(transparent,black 2rem,black calc(100% - 2rem),transparent),linear-gradient(90deg,transparent,black 3rem,black calc(100% - 3rem),transparent); mask-composite: intersect; }
+    .hero-shade { display: none; }
+    h1 { letter-spacing: clamp(.15em,calc(.15em + (100vw - 1000px) * .0033),.2em); }
+    .hero-hud { width: clamp(145px,calc(145px + (100vw - 1000px) * .05),10.3125rem); margin-top: clamp(-2rem,calc(-2rem + (100vw - 1000px) * .08),0px); padding-block: clamp(1rem,calc(1rem + (100vw - 1000px) * .02),1.5rem); }
+    .hero-hud ul { gap: clamp(.75rem,calc(.75rem + (100vw - 1000px) * .014),1.1rem); }
+    :global([data-theme="light"]) .hero-foreground::before { inset: -5rem -10rem -100svh -50vw; background: var(--bs-page); opacity: .96; mask-image: linear-gradient(transparent,black 5rem,black calc(100% - 5rem),transparent),linear-gradient(90deg,transparent,black 10rem,black calc(100% - 10rem),transparent); }
   }
   @media (min-width:701px) { :global([data-theme="light"]) .hero-pillars { background: color-mix(in srgb,var(--bs-page) 94%,transparent); padding: .3rem .5rem; border-radius: 2px; } }
   @media (max-width:1000px) { .hero-inner { grid-template-columns: minmax(0,1fr) 155px; gap: 2rem; padding-top: 4rem; } h1 { letter-spacing: .15em; } .hero-hud { letter-spacing: .15em; width: 145px; padding: 1rem .6rem; } .hero-hud ul { gap: .75rem; } .hero-background :global(img) { object-position: 72% center; } }

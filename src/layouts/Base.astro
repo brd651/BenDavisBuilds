@@ -32,7 +32,7 @@ const canonical = new URL(path, Astro.site);
       })();
     </script>
   </head>
-  <body>
+  <body class:list={[{ homepage: homepageHero }]}>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="development-notice"><span class="notice-label">Development preview</span><span>Sample content · design in progress</span></div>
     <header class:list={["site-header", "shell", { "homepage-header": homepageHero }]}>

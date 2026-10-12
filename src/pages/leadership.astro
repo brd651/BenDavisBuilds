@@ -5,10 +5,15 @@ import Base from '../layouts/Base.astro';
 const philosophy = await getEntry('leadership', 'philosophy');
 if (!philosophy || philosophy.data.draft) throw new Error('Leadership copy must be present and approved for publication.');
 const { Content } = await render(philosophy);
+const titleWords = philosophy.data.title.split(/\s+/);
+const titleStart = titleWords.slice(0, -1).join(' ');
+const titleEnd = titleWords.at(-1);
 const contents = [
+  ['#leadership-origin', 'Where it began'],
   ['#principles', 'Five principles'],
   ['#the-operating-question-does-it-scale', 'Does It Scale?'],
   ['#technical-integrity-and-business-outcomes', 'In practice'],
+  ['#coaching', 'Coach Up, Not Out'],
   ['#leadership-transparency', 'No Surprises'],
   ['#leadership-success', 'What success looks like'],
 ];
@@ -16,9 +21,13 @@ const contents = [
 <Base title={philosophy.data.title} description={philosophy.data.description} sampleContent={false} socialMetadata>
   <article class="leadership-page">
     <header class="leadership-heading">
-      <p class="eyebrow signature-label">Leadership philosophy</p>
-      <h1>{philosophy.data.title}</h1>
-      <p class="lead">{philosophy.data.subtitle}</p>
+      <div class="hero-title">
+        <p class="eyebrow">Leadership philosophy</p>
+        <h1>{titleStart} <span>{titleEnd}</span></h1>
+      </div>
+      <div class="hero-opening">
+        <p class="opening-statement">{philosophy.data.subtitle}</p>
+      </div>
       <nav class="leadership-contents" aria-label="On this page">
         <ul>{contents.map(([href, label]) => <li><a href={href}>{label}</a></li>)}</ul>
       </nav>
@@ -32,70 +41,141 @@ const contents = [
 </Base>
 
 <style>
-  /* Long editorial anchor jumps stay deterministic during rapid keyboard navigation. */
   :global(html:has(.leadership-page)) { scroll-behavior: auto; }
-  .leadership-page { margin-bottom: 5rem; }
-  .leadership-heading { border-top: 1px solid var(--bs-line); padding-block: clamp(2rem, 5vw, 4rem) 2.5rem; }
-  .leadership-heading .eyebrow { margin-bottom: 1.5rem; }
-  .leadership-heading h1 { font-size: clamp(2.75rem, 5vw, 4.5rem); margin-bottom: 1.25rem; }
-  .leadership-heading .lead { max-width: 48ch; font-size: clamp(1.125rem, 1.5vw, 1.375rem); }
-  .leadership-contents { margin-top: 2rem; }
-  .leadership-contents ul { gap: .5rem 2rem; }
+  .leadership-page { --leadership-outer-focus: var(--bs-focus); margin-bottom: 5rem; }
+  .leadership-heading { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem 4rem; align-items: end; padding-block: clamp(3rem, 7vw, 6rem) 3rem; border-top: 1px solid var(--bs-line); }
+  .hero-title .eyebrow { display: flex; align-items: center; gap: .75rem; margin-bottom: 2rem; }
+  .hero-title .eyebrow::before { content: ''; width: 3px; height: 1rem; background: var(--bs-scarlet); }
+  .leadership-heading h1 { font-size: clamp(3.5rem, 14vw, 11rem); line-height: .86; letter-spacing: -.075em; font-weight: 650; margin: 0; }
+  .leadership-heading h1 span { display: block; }
+  .hero-opening { max-width: 52ch; }
+  .hero-opening p { font-size: 1.0625rem; line-height: 1.8; color: var(--bs-muted); margin-bottom: 0; }
+  .hero-opening .opening-statement { font-size: clamp(1.5rem, 2.7vw, 2.25rem); line-height: 1.25; color: var(--bs-text); letter-spacing: -.025em; margin-bottom: 1.5rem; max-width: 22ch; }
+  .leadership-contents { grid-column: 1 / -1; border-top: 1px solid var(--bs-line); padding-top: 1rem; }
+  .leadership-contents ul { gap: .5rem 1.75rem; }
   .leadership-contents a { display: inline-block; padding-block: .4rem; font-size: .875rem; }
   .leadership-prose { min-width: 0; }
-  .leadership-prose :global(p), .leadership-prose :global(.framework-questions) { font-size: 1.125rem; line-height: 1.8; }
-  .leadership-prose :global(.leadership-section) { padding-block: clamp(2rem, 5vw, 4rem); border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(p) { font-size: 1.125rem; line-height: 1.8; }
   .leadership-prose :global([id]) { scroll-margin-top: 2rem; }
-  .leadership-prose :global(h2) { font-size: clamp(1.8rem, 3vw, 2.75rem); line-height: 1.2; margin-bottom: 2rem; max-width: 25ch; }
-  .leadership-prose :global(h3) { font-size: clamp(1.3rem, 2vw, 1.65rem); line-height: 1.35; letter-spacing: -.025em; }
+  .leadership-prose :global(.leadership-operating:focus-visible), .leadership-prose :global(.leadership-coaching:focus-visible) { outline-color: var(--leadership-outer-focus); }
+  .leadership-prose :global(h2) { font-size: clamp(2.25rem, 4.5vw, 4rem); line-height: 1.05; letter-spacing: -.045em; margin-bottom: 2rem; }
+  .leadership-prose :global(h3) { font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.12; margin-bottom: 1rem; letter-spacing: -.04em; }
   .leadership-prose :global(.eyebrow) { font-size: .75rem; line-height: 1.6; }
-  .leadership-prose :global(.principle-overview ol) { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; list-style: none; padding: 0; margin: 0; }
-  .leadership-prose :global(.principle-card) { display: flex; flex-direction: column; height: 100%; gap: .8rem; padding: 1.25rem; border: 1px solid var(--bs-line); border-radius: 4px; background: var(--bs-surface); text-decoration: none; transition: border-color 150ms ease; }
-  .leadership-prose :global(.principle-card:hover) { background: var(--bs-raised); border-color: var(--bs-border); }
-  .leadership-prose :global(.principle-card:hover .principle-link) { text-decoration-thickness: 2px; }
-  .leadership-prose :global(.principle-number) { font-size: .875rem; color: var(--bs-accentText); font-variant-numeric: tabular-nums; letter-spacing: .08em; }
-  .leadership-prose :global(.principle-card strong) { font-size: 1.0625rem; line-height: 1.4; }
-  .leadership-prose :global(.principle-summary) { font-size: .9375rem; line-height: 1.65; color: var(--bs-muted); }
-  .leadership-prose :global(.principle-link) { padding-top: .5rem; margin-top: auto; font-size: .875rem; line-height: 1.5; text-decoration: underline; text-underline-offset: .22em; }
-  .leadership-prose :global(.leadership-intro) { max-width: 65ch; margin-block: 3rem; }
-  .leadership-prose :global(.leadership-chapter) { display: grid; grid-template-columns: minmax(0, 17rem) minmax(0, 1fr); column-gap: clamp(2rem, 5vw, 4rem); padding-top: 2.5rem; margin-top: 2.5rem; border-top: 1px solid var(--bs-line); }
-  .leadership-prose :global(.leadership-chapter h3) { grid-column: 1; grid-row: 1; }
-  .leadership-prose :global(.leadership-chapter p) { grid-column: 2; max-width: 65ch; }
-  .leadership-prose :global(.leadership-related) { font-size: .9375rem; }
-  .leadership-prose :global(.leadership-operating) { padding: clamp(1.25rem, 4vw, 3rem); background: var(--bs-surface); border: 1px solid var(--bs-line); border-top: 2px solid var(--bs-brass); border-radius: 5px; margin-block: 1rem 3rem; }
-  .leadership-prose :global(.leadership-operating h2) { color: var(--bs-accentText); }
-  .leadership-prose :global(.framework-layout) { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 3rem; align-items: start; }
-  .leadership-prose :global(.framework-questions ol) { padding-left: 1.5rem; margin: 0; }
-  .leadership-prose :global(.framework-questions li) { padding: 1rem 0 1rem .5rem; border-top: 1px solid var(--bs-line); }
-  .leadership-prose :global(.framework-questions li:first-child) { padding-top: 0; border-top: 0; }
-  .leadership-prose :global(.framework-questions li::marker) { font-weight: 700; color: var(--bs-accentText); }
-  .leadership-prose :global(.framework-questions strong) { display: block; }
-  .leadership-prose :global(.framework-closing) { max-width: 65ch; border-top: 1px solid var(--bs-line); margin-top: 2rem; padding-top: 2rem; }
-  .leadership-prose :global(.practice-intro), .leadership-prose :global(.transparency-copy), .leadership-prose :global(.leadership-success) { max-width: 65ch; }
-  .leadership-prose :global(.leadership-case) { display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 1fr); column-gap: 3rem; padding: clamp(1.25rem, 4vw, 2.5rem); margin-block: 2rem; border: 1px solid var(--bs-line); border-radius: 5px; background: var(--bs-surface); }
-  .leadership-prose :global(.leadership-case h3) { grid-column: 1; font-size: 1.125rem; padding-top: .3rem; }
-  .leadership-prose :global(.leadership-case p) { grid-column: 2; max-width: 65ch; }
-  .leadership-prose :global(.leadership-coaching) { max-width: 65ch; margin-top: 3rem; padding: clamp(1.25rem, 3vw, 2rem); border-left: 3px solid var(--bs-border); background: var(--bs-surface); }
-  .leadership-prose :global(.transparency-copy p:nth-child(2)) { border-left: 3px solid var(--bs-border); padding: 1.5rem; background: var(--bs-surface); }
-  .leadership-prose :global(.leadership-success) { margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(.leadership-origin) { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(2rem, 5vw, 4rem); margin-block: 2rem 6rem; padding: 1rem 0 1rem clamp(1.5rem, 4vw, 3rem); border-left: 8px solid var(--bs-scarlet); }
+  .leadership-prose :global(.leadership-origin h2) { max-width: 12ch; margin-bottom: 0; }
+  .leadership-prose :global(.origin-statement) { font-size: clamp(1.375rem, 2.3vw, 1.75rem); line-height: 1.4; color: var(--bs-text); }
+  .leadership-prose :global(.origin-copy p:last-child) { margin-bottom: 0; }
+  .leadership-prose :global(.principles-introduction) { display: grid; grid-template-columns: 1fr 1fr; gap: 0 4rem; border-top: 1px solid var(--bs-line); padding-top: 3rem; }
+  .leadership-prose :global(.principles-introduction .eyebrow) { grid-column: 1 / -1; }
+  .leadership-prose :global(.principles-introduction h2) { max-width: 10ch; }
+  .leadership-prose :global(.principle-index ol) { list-style: none; padding: 0; margin: 1rem 0 4rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 2rem; }
+  .leadership-prose :global(.principle-index a) { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; gap: .75rem; padding-block: 1rem; border-top: 1px solid var(--bs-line); font-size: .875rem; line-height: 1.5; text-underline-offset: .22em; }
+  .leadership-prose :global(.principle-index a span:first-child) { color: var(--bs-accentText); font-variant-numeric: tabular-nums; }
+  .leadership-prose :global(.leadership-chapter) { padding-block: 3rem 4rem; border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(.principle-heading) { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 2rem; align-items: start; margin-bottom: 2.5rem; }
+  .leadership-prose :global(.chapter-number) { font-size: clamp(5rem, 9vw, 8rem); line-height: .95; letter-spacing: -.075em; color: var(--bs-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .leadership-prose :global(.principle-heading h3) { max-width: 20ch; }
+  .leadership-prose :global(.chapter-summary) { max-width: 45ch; font-size: 1.375rem; line-height: 1.5; color: var(--bs-muted); margin-bottom: 0; }
+  .leadership-prose :global(.chapter-composition) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 4rem; align-items: start; }
+  .leadership-prose :global(.chapter-main), .leadership-prose :global(.chapter-rest) { max-width: 65ch; }
+  .leadership-prose :global(.chapter-pull) { margin: 0; padding: 1.5rem 0 1.5rem 2rem; border-left: 2px solid var(--bs-brass); }
+  .leadership-prose :global(.chapter-pull p) { font-size: 1.375rem; line-height: 1.65; margin-bottom: 0; }
+  .leadership-prose :global(.chapter-rest:has(p)) { margin-top: 2rem; margin-left: auto; }
+  .leadership-prose :global(.chapter-rest .leadership-related) { font-size: .9375rem; }
+  .leadership-prose :global(.principle-02 .principle-heading) { margin-left: 10%; }
+  .leadership-prose :global(.principle-02 .chapter-pull) { padding: 2rem; border: 0; background: var(--bs-surface); }
+  .leadership-prose :global(.principle-02 .chapter-rest p) { font-size: 1.5rem; line-height: 1.6; }
+  .leadership-prose :global(.principle-03) { padding-inline: 2.5rem; background: var(--bs-surface); border-top: 0; }
+  .leadership-prose :global(.principle-03 .chapter-composition) { grid-template-columns: 1fr 1fr; }
+  .leadership-prose :global(.principle-03 .chapter-pull) { border: 0; padding: 0; grid-column: 1; grid-row: 1; }
+  .leadership-prose :global(.principle-03 .chapter-pull p) { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.25; letter-spacing: -.03em; }
+  .leadership-prose :global(.principle-03 .chapter-main) { grid-column: 2; }
+  .leadership-prose :global(.principle-03 .chapter-rest) { max-width: none; columns: 2; column-gap: 4rem; }
+  .leadership-prose :global(.principle-03 .chapter-rest p) { break-inside: avoid; }
+  .leadership-prose :global(.principle-04 .principle-heading) { grid-template-columns: minmax(0, 1fr) 10rem; }
+  .leadership-prose :global(.principle-04 .chapter-number) { grid-column: 2; grid-row: 1; text-align: right; }
+  .leadership-prose :global(.principle-04 .principle-heading > div) { grid-column: 1; grid-row: 1; }
+  .leadership-prose :global(.principle-04 .chapter-main p) { font-size: 1.5rem; line-height: 1.5; }
+  .leadership-prose :global(.principle-04 .chapter-pull) { border-top: 2px solid var(--bs-brass); border-left: 0; padding: 1.5rem 0 0; }
+  .leadership-prose :global(.principle-04 .chapter-pull p) { font-size: 1.125rem; }
+  .leadership-prose :global(.principle-05 .chapter-pull) { background: var(--bs-surface); padding: 2rem; border: 0; }
+  .leadership-prose :global(.principle-05 .chapter-main p:first-child) { font-size: 1.5rem; line-height: 1.5; }
+  .leadership-prose :global(.leadership-operating) { color: var(--bs-text); background: var(--bs-page); padding: clamp(1.5rem, 5vw, 4rem); margin-block: 2rem 5rem; border-top: 3px solid var(--bs-brass); }
+  :global(html[data-theme="light"]) .leadership-prose :global(.leadership-operating) { background: var(--bs-surface); }
+  .leadership-prose :global(.framework-heading) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; margin-bottom: 2rem; }
+  .leadership-prose :global(.framework-heading h2) { font-size: clamp(3rem, 6vw, 5rem); max-width: 9ch; }
+  .leadership-prose :global(.framework-opening p:last-child) { font-size: 1.375rem; line-height: 1.5; }
+  .leadership-prose :global(.framework-questions ol) { list-style: none; padding: 0; margin: 0; }
+  .leadership-prose :global(.framework-questions li) { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1.5rem; padding-block: 1.5rem; border-top: 1px solid var(--bs-border); }
+  .leadership-prose :global(.decision-index) { font-size: 1.75rem; line-height: 1.4; color: var(--bs-accentText); letter-spacing: -.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .leadership-prose :global(.decision-copy) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 2rem; }
+  .leadership-prose :global(.decision-copy strong) { font-size: 1.25rem; line-height: 1.4; }
+  .leadership-prose :global(.decision-copy p) { margin-bottom: 0; line-height: 1.65; }
+  .leadership-prose :global(.framework-notes) { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--bs-border); }
+  .leadership-prose :global(.framework-notes p) { font-size: 1rem; line-height: 1.8; }
+  .leadership-prose :global(.leadership-practice) { padding-block: 1rem 5rem; }
+  .leadership-prose :global(.leadership-practice h2) { max-width: 19ch; font-size: clamp(2.5rem, 5vw, 4.25rem); }
+  .leadership-prose :global(.practice-intro) { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; margin-top: 2rem; }
+  .leadership-prose :global(.practice-intro p:first-child) { font-size: 1.5rem; line-height: 1.5; }
+  .leadership-prose :global(.case-opening) { max-width: 40ch; margin-top: 2rem; }
+  .leadership-prose :global(.case-opening p) { font-size: 1.5rem; line-height: 1.45; }
+  .leadership-prose :global(.leadership-case) { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem 4rem; margin: 2rem 0 0; }
+  .leadership-prose :global(.case-stage) { padding-top: 1.5rem; border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(.case-stage dt) { display: flex; gap: 1rem; font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; }
+  .leadership-prose :global(.case-stage dt span) { color: var(--bs-accentText); font-weight: 400; white-space: nowrap; }
+  .leadership-prose :global(.case-stage dd) { margin: 0; }
+  .leadership-prose :global(.case-stage-04 p:first-child) { font-size: 1.375rem; line-height: 1.5; }
+  .leadership-prose :global(.leadership-coaching) { display: grid; grid-template-columns: 1fr 1.1fr; gap: 4rem; background: var(--bs-surface); color: var(--bs-text); padding: clamp(1.5rem, 5vw, 4rem); margin-block: 1rem 6rem; }
+  .leadership-prose :global(.leadership-coaching h2) { font-size: clamp(2.5rem, 5vw, 4.5rem); max-width: 11ch; margin-bottom: 0; }
+  .leadership-prose :global(.coaching-copy p:first-child) { font-size: 1.375rem; line-height: 1.65; }
+  .leadership-prose :global(.coaching-copy p:last-child) { font-size: 1rem; margin-bottom: 0; }
+  .leadership-prose :global(.leadership-transparency) { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; padding-block: 1rem 5rem; }
+  .leadership-prose :global(.leadership-transparency h2) { max-width: 9ch; font-size: clamp(3rem, 7vw, 6.5rem); line-height: .95; }
+  .leadership-prose :global(.transparency-copy p:nth-child(2)) { font-size: 1.375rem; line-height: 1.65; }
+  .leadership-prose :global(.leadership-success) { padding-block: 3rem; border-top: 1px solid var(--bs-line); }
+  .leadership-prose :global(.leadership-success h2) { max-width: 15ch; }
+  .leadership-prose :global(.success-copy) { columns: 2; column-gap: 4rem; }
+  .leadership-prose :global(.success-copy p) { break-inside: avoid; }
+  .leadership-prose :global(.success-statement) { max-width: 50ch; margin: 2rem 0 0 auto; padding-left: 2rem; border-left: 2px solid var(--bs-brass); }
+  .leadership-prose :global(.success-statement p) { font-size: 1.5rem; line-height: 1.55; }
   .leadership-more { display: flex; flex-wrap: wrap; gap: 1rem 2rem; padding-top: 2rem; border-top: 1px solid var(--bs-line); }
-  @media (max-width: 1100px) {
-    .leadership-prose :global(.principle-overview ol) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .leadership-prose :global(.principle-overview li:last-child) { grid-column: 1 / -1; }
+  @media (max-width: 900px) {
+    .leadership-heading { grid-template-columns: 1fr; align-items: start; gap: 2.5rem; }
+    .leadership-heading h1 span { display: inline; }
+    .leadership-heading h1 { font-size: clamp(3.5rem, 11vw, 6.5rem); }
+    .hero-opening { max-width: 65ch; }
+    .hero-opening .opening-statement { max-width: 30ch; }
+    .leadership-prose :global(.principle-index ol) { grid-template-columns: 1fr 1fr; }
+    .leadership-prose :global(.principle-heading) { grid-template-columns: 6rem minmax(0, 1fr); }
+    .leadership-prose :global(.chapter-composition) { gap: 2rem; }
+    .leadership-prose :global(.principle-02 .principle-heading) { margin-left: 0; }
+    .leadership-prose :global(.principle-04 .principle-heading) { grid-template-columns: minmax(0, 1fr) 6rem; }
+    .leadership-prose :global(.decision-copy) { grid-template-columns: 1fr; gap: .5rem; }
+    .leadership-prose :global(.leadership-coaching), .leadership-prose :global(.leadership-transparency) { gap: 2rem; }
   }
-  @media (max-width: 800px) {
-    .leadership-prose :global(.leadership-chapter), .leadership-prose :global(.framework-layout), .leadership-prose :global(.leadership-case) { grid-template-columns: minmax(0, 1fr); }
-    .leadership-prose :global(.leadership-chapter p), .leadership-prose :global(.leadership-case p) { grid-column: 1; }
-    .leadership-prose :global(.framework-layout) { gap: 1.5rem; }
-    .leadership-prose :global(.leadership-case h3:not(:first-child)) { padding-top: 1rem; border-top: 1px solid var(--bs-line); }
+  @media (max-width: 700px) {
+    .leadership-prose :global(.leadership-origin), .leadership-prose :global(.principles-introduction), .leadership-prose :global(.chapter-composition), .leadership-prose :global(.principle-03 .chapter-composition), .leadership-prose :global(.framework-heading), .leadership-prose :global(.framework-notes), .leadership-prose :global(.practice-intro), .leadership-prose :global(.leadership-case), .leadership-prose :global(.leadership-coaching), .leadership-prose :global(.leadership-transparency) { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+    .leadership-prose :global(.leadership-origin) { margin-bottom: 3rem; }
+    .leadership-prose :global(.principle-index ol) { grid-template-columns: 1fr; margin-bottom: 2rem; }
+    .leadership-prose :global(.principle-heading), .leadership-prose :global(.principle-04 .principle-heading) { grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1rem; }
+    .leadership-prose :global(.chapter-number) { font-size: 3.5rem; }
+    .leadership-prose :global(.principle-04 .chapter-number) { grid-column: 1; text-align: left; }
+    .leadership-prose :global(.principle-04 .principle-heading > div) { grid-column: 2; }
+    .leadership-prose :global(.principle-heading h3) { font-size: clamp(1.75rem, 6vw, 2.5rem); }
+    .leadership-prose :global(.chapter-summary) { font-size: 1.125rem; }
+    .leadership-prose :global(.chapter-rest:has(p)) { margin-left: 0; }
+    .leadership-prose :global(.principle-03) { padding-inline: 1.5rem; }
+    .leadership-prose :global(.principle-03 .chapter-main), .leadership-prose :global(.principle-03 .chapter-pull) { grid-column: 1; grid-row: auto; }
+    .leadership-prose :global(.principle-03 .chapter-rest), .leadership-prose :global(.success-copy) { columns: 1; }
+    .leadership-prose :global(.framework-questions li) { grid-template-columns: 2.5rem minmax(0, 1fr); gap: .75rem; }
+    .leadership-prose :global(.leadership-coaching) { margin-bottom: 3rem; }
+    .leadership-prose :global(.success-statement) { padding-left: 1.25rem; }
   }
-  @media (max-width: 600px) {
-    .leadership-prose :global(.principle-overview ol) { grid-template-columns: minmax(0, 1fr); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .leadership-prose :global(.principle-card) { transition: none; }
+  @media (max-width: 500px) {
+    .leadership-prose :global(.principle-heading), .leadership-prose :global(.principle-04 .principle-heading) { grid-template-columns: minmax(0, 1fr); }
+    .leadership-prose :global(.principle-04 .chapter-number), .leadership-prose :global(.principle-04 .principle-heading > div) { grid-column: 1; grid-row: auto; }
   }
   @media (forced-colors: active) {
-    .leadership-prose :global(.principle-card), .leadership-prose :global(.leadership-operating), .leadership-prose :global(.leadership-case) { border-color: CanvasText; }
+    .leadership-prose :global(.leadership-origin), .leadership-prose :global(.chapter-pull), .leadership-prose :global(.leadership-operating) { border-color: CanvasText; }
   }
 </style>

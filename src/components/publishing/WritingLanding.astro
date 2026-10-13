@@ -1,0 +1,105 @@
+---
+import Base from '../../layouts/Base.astro';
+import WritingStory from './WritingStory.astro';
+import Pagination from './Pagination.astro';
+import { publishedEntries, taxonomies, type ArticleEntry } from '../../lib/publishing';
+import { featuredEntry, latestWritingEntries, pageCount, pageEntries } from '../../lib/publishing-policy';
+interface Props { entries?: ArticleEntry[]; page?: number }
+const { page = 1 } = Astro.props;
+const entries = Astro.props.entries ?? await publishedEntries('writing');
+const all = await publishedEntries();
+const featured = featuredEntry(entries);
+// One chronological stream across all Latest pages; the featured story has its own section.
+const latestEntries = latestWritingEntries(entries);
+const latest = pageEntries(latestEntries, page);
+const description = 'Notes on people, systems, and useful work.';
+const samplesOnly = entries.length > 0 && entries.every(entry => entry.data.sample);
+---
+<Base title={`Writing & Field Notes${page > 1 ? ` / Page ${page}` : ''}`} description={description} sampleContent={samplesOnly} socialMetadata>
+  <link slot="head" rel="alternate" type="application/rss+xml" title="Ben Davis Builds" href="/rss.xml" />
+  <div class="writing-landing">
+    <header class="writing-hero">
+      <div><p class="eyebrow">Built Signal / the publication</p><h1>Writing <span>& Field Notes</span></h1><p class="hero-description">{description}</p></div>
+      <div class="reader-tools">
+        <a class="writing-search" href="/writing/search/"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6.5" /><path d="m15 15 6 6" /></svg><span>Search articles</span><span aria-hidden="true">↗</span></a>
+        <a class="rss-link" href="/rss.xml">Follow via RSS <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    {entries.some(entry => entry.data.sample) && <p class="demonstration-notice"><span class="notice-rule" aria-hidden="true"></span><span><strong>{samplesOnly ? 'Demonstration edition.' : 'A note on samples.'}</strong> {samplesOnly ? 'These entries demonstrate the publishing format; they are not genuine published articles.' : 'Entries marked “Demonstration” illustrate the publishing format.'}</span></p>}
+
+    {featured && page === 1 && <section class="writing-feature" aria-label="Featured writing"><WritingStory entry={featured} featured /></section>}
+
+    <section class="writing-discovery" aria-labelledby="browse-writing">
+      <div class="discovery-heading"><h2 id="browse-writing">Find your thread.</h2><p>Browse by category or follow a topic across writing, projects, and the archive.</p></div>
+      <nav class="topic-navigation" aria-label="Browse categories"><span class="topic-label">Categories</span><ul>{taxonomies(all, 'category').map(group => <li><a href={`/writing/category/${group.slug}/`}>{group.label}</a></li>)}</ul></nav>
+      <nav class="topic-navigation tag-navigation" aria-label="Browse tags"><span class="topic-label">Topics</span><ul>{taxonomies(all, 'tags').map(group => <li><a href={`/writing/tag/${group.slug}/`}>#{group.label}</a></li>)}</ul></nav>
+    </section>
+
+    <section class="latest-writing" aria-labelledby="latest-writing">
+      <div class="section-heading"><h2 id="latest-writing">Latest Writing</h2><p>{samplesOnly ? 'Explore the demonstration collection.' : 'The latest notes, in publication order.'}</p></div>
+      <div class="writing-grid">{latest.map(entry => <WritingStory entry={entry} />)}</div>
+      {entries.length === 0 && <p class="empty-writing">No articles are published here yet.</p>}
+      {entries.length > 0 && latest.length === 0 && <p class="empty-writing">Start with the featured {featured?.data.sample ? 'demonstration' : 'article'} above. More writing will appear here as it is published.</p>}
+      <Pagination base="/writing/" page={page} total={pageCount(latestEntries.length)} />
+    </section>
+
+    <aside class="writing-archive" aria-labelledby="archive-title">
+      <div class="archive-heading"><p class="eyebrow">Earlier work / original context</p><h2 id="archive-title">The historical archive.</h2></div>
+      <div class="archive-copy"><p>Earlier writing, read in its original context. Historical technical guidance may be obsolete; sample entries are demonstrations, not genuine historical posts.</p><a class="archive-link" href="/writing/archive/">Explore the historical archive <span aria-hidden="true">↗</span></a></div>
+    </aside>
+  </div>
+</Base>
+<style>
+  .writing-landing { margin-bottom: 5rem; }
+  .writing-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: center; padding-block: 2.5rem 1.75rem; }
+  .writing-hero .eyebrow { margin-bottom: .75rem; }
+  h1 { font-size: clamp(2.2rem, 4vw, 3.5rem); line-height: 1.1; margin-bottom: 1rem; letter-spacing: -.055em; }
+  h1 span { display: block; color: var(--bs-muted); }
+  .hero-description { color: var(--bs-muted); max-width: 50ch; margin-bottom: 0; font-size: 1.0625rem; }
+  .reader-tools { display: flex; flex-direction: column; gap: .75rem; align-items: flex-end; }
+  .writing-search { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 52px; padding: .65rem 1rem; border: 1px solid var(--bs-border); border-radius: 3px; background: var(--bs-surface); text-decoration: none; font-weight: 600; }
+  .writing-search svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+  .writing-search > span:last-child, .rss-link span { color: var(--bs-accentText); }
+  .writing-search:hover, .writing-search:focus-visible { background: var(--bs-raised); border-color: var(--bs-accentText); }
+  .rss-link { padding-block: .35rem; min-height: 44px; display: inline-flex; align-items: center; gap: 1rem; font-size: .875rem; text-underline-offset: .35em; }
+  .rss-link:hover, .rss-link:focus-visible { color: var(--bs-accentText); }
+  .demonstration-notice { display: flex; align-items: baseline; gap: .75rem; color: var(--bs-muted); font-size: .875rem; line-height: 1.7; border-top: 1px solid var(--bs-line); padding-top: 1rem; margin: 0 0 2rem; }
+  .demonstration-notice strong { color: var(--bs-text); font-weight: 600; }
+  .notice-rule { flex: 0 0 22px; height: 2px; background: var(--bs-scarlet); transform: translateY(-.25rem); }
+  .writing-discovery { margin-block: 3rem; padding-block: 2rem; border-block: 1px solid var(--bs-line); }
+  .discovery-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 2rem; margin-bottom: 1.25rem; }
+  .discovery-heading h2 { font-size: 1.5rem; margin-bottom: 0; }
+  .discovery-heading p { font-size: .875rem; color: var(--bs-muted); margin: 0; }
+  .topic-navigation { display: grid; grid-template-columns: 100px minmax(0, 1fr); align-items: start; gap: .5rem 1rem; }
+  .topic-label { color: var(--bs-muted); font-size: .8125rem; padding-block: .65rem; }
+  .topic-navigation ul { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .topic-navigation a { display: inline-flex; align-items: center; min-height: 44px; padding: .45rem .9rem; border: 1px solid var(--bs-border); border-radius: 3px; font-size: .875rem; text-decoration: none; }
+  .topic-navigation a:hover, .topic-navigation a:focus-visible { background: var(--bs-surface); color: var(--bs-accentText); border-color: var(--bs-accentText); text-decoration: underline; }
+  .tag-navigation { margin-top: 1rem; }
+  .tag-navigation a { border-color: transparent; background: var(--bs-surface); color: var(--bs-muted); }
+  .latest-writing { margin-block: 0 3.5rem; }
+  .section-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: 1.5rem; }
+  .section-heading h2 { font-size: clamp(1.8rem, 2.5vw, 2.25rem); margin-bottom: 0; }
+  .section-heading p { color: var(--bs-muted); font-size: .9375rem; margin-bottom: 0; }
+  .writing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 1.5rem; }
+  .empty-writing { color: var(--bs-muted); border-top: 1px solid var(--bs-line); padding-top: 1.5rem; }
+  .writing-archive { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; border-block: 1px solid var(--bs-line); border-left: 3px solid var(--bs-brass); padding: 2rem; background: var(--bs-surface); }
+  .archive-heading .eyebrow { margin-bottom: .75rem; }
+  .archive-heading h2 { font-family: ui-serif, Georgia, serif; font-weight: 500; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.2; letter-spacing: -.03em; max-width: 15ch; margin-bottom: 0; }
+  .archive-copy p { color: var(--bs-muted); line-height: 1.75; font-size: .9375rem; }
+  .archive-link { display: inline-flex; align-items: center; gap: 1rem; min-height: 44px; font-size: .9375rem; font-weight: 600; text-underline-offset: .4em; }
+  .archive-link span { color: var(--bs-accentText); }
+  .archive-link:hover, .archive-link:focus-visible { color: var(--bs-accentText); }
+  @media (max-width: 700px) {
+    .writing-hero { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; padding-top: 1.5rem; }
+    .reader-tools { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem 1rem; }
+    .writing-search { font-size: .875rem; gap: .75rem; padding-inline: .75rem; }
+    .rss-link { gap: .5rem; }
+    .topic-navigation { grid-template-columns: minmax(0, 1fr); gap: .2rem; }
+    .topic-label { padding-block: .25rem; }
+    .writing-archive { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; padding: 1.5rem; }
+    .writing-discovery { margin-block: 2rem; }
+  }
+  @media (forced-colors: active) { .notice-rule { background: CanvasText; } .writing-archive { border-color: CanvasText; } .tag-navigation a { border-color: ButtonText; } }
+</style>

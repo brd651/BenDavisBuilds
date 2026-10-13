@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { isPublished, pageCount, plainText, readingMinutes, relatedScore, taxonomySlug } from './publishing-policy';
+import { isPublished, latestWritingEntries, pageCount, plainText, readingMinutes, relatedScore, taxonomySlug } from './publishing-policy';
 export type PublishingCollection = 'writing' | 'archive' | 'projects';
 export type ArticleEntry = CollectionEntry<PublishingCollection>;
 export const collectionBases = { writing: '/writing/', archive: '/writing/archive/', projects: '/projects/' } as const;
@@ -32,7 +32,11 @@ export async function publicUrls(): Promise<string[]> {
     const base = `/writing/${field === 'category' ? 'category' : 'tag'}/${group.slug}/`;
     urls.push(base); for (let p = 2; p <= pageCount(group.entries.length); p++) urls.push(`${base}page/${p}/`);
   }
-  for (const collection of ['writing', 'archive', 'projects'] as const) for (let p = 2; p <= pageCount(entries.filter(e => e.collection === collection).length); p++) urls.push(`${collectionBases[collection]}page/${p}/`);
+  for (const collection of ['writing', 'archive', 'projects'] as const) {
+    const collectionEntries = entries.filter(e => e.collection === collection);
+    const listingEntries = collection === 'writing' ? latestWritingEntries(collectionEntries) : collectionEntries;
+    for (let p = 2; p <= pageCount(listingEntries.length); p++) urls.push(`${collectionBases[collection]}page/${p}/`);
+  }
   return [...new Set(urls)];
 }
 export function searchEntry(entry: ArticleEntry) { return { url: articleUrl(entry), title: entry.data.title, description: entry.data.description, category: entry.data.category, tags: entry.data.tags, collection: collectionNames[entry.collection], sample: entry.data.sample, text: plainText(entry.body ?? ''), readingMinutes: readingMinutes(entry.body ?? '') }; }

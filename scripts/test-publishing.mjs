@@ -15,15 +15,34 @@ try {
   await symlink(resolve(source,'node_modules'),resolve(work,'node_modules'),'dir');
   for (const collection of ['writing','archive','projects']) {
     const base=join(work,'src/content',collection); const extra=collection==='archive'?'historical: true\n':'';
-    await writeFile(join(base,'draft-sentinel.md'),fixture('draft-sentinel',`${extra}draft: true\n`));
-    await writeFile(join(base,'future-sentinel.md'),fixture('future-sentinel',`${extra}publishedAt: "2999-01-01"\n`));
+    await writeFile(join(base,'draft-sentinel.md'),fixture('draft-sentinel',`${extra}draft: true\nfeatured: true\n`));
+    await writeFile(join(base,'future-sentinel.md'),fixture('future-sentinel',`${extra}publishedAt: "2999-01-01"\nfeatured: true\n`));
   }
-  await writeFile(join(work,'src/content/writing/automatic-file.md'),fixture('Automatic file route'));
-  for(let i=1;i<=6;i++) await writeFile(join(work,`src/content/writing/pagination-fixture-${i}.md`),fixture(`Pagination fixture ${i}`));
+  await writeFile(join(work,'src/content/writing/automatic-file.md'),fixture('Automatic file route', 'publishedAt: "2000-01-07"\nimage: ../../assets/articles/publishing-workflow.png\nimageAlt: "Temporary acceptance illustration."\n'));
+  for(let i=1;i<=6;i++) await writeFile(join(work,`src/content/writing/pagination-fixture-${i}.md`),fixture(`Pagination fixture ${i}`, `publishedAt: "2000-01-0${i}"\n`));
+  // Only this throwaway copy gets fixture dates: the selected feature is older than seven dated entries.
+  const technicalPath = join(work,'src/content/writing/technical-sample.mdx');
+  const technicalSource = (await readFile(technicalPath,'utf8')).replace('sample: true', 'sample: true\npublishedAt: "1999-12-31"');
+  await writeFile(technicalPath, technicalSource);
   const valid=build(); assert.equal(valid.status,0,valid.stderr+'\n'+valid.stdout);
   assert.ok(await exists(join(work,'dist/writing/automatic-file/index.html')),'Adding Markdown did not create its route.');
   assert.ok(await exists(join(work,'dist/writing/page/2/index.html')),'Pagination did not create page2.');
   assert.ok(await exists(join(work,'dist/writing/category/acceptance-fixture/page/2/index.html')),'Taxonomy pagination did not create page2.');
+  const landing = await readFile(join(work,'dist/writing/index.html'),'utf8');
+  assert.match(landing, /Writing.*&amp; Field Notes/);
+  assert.match(landing, /writing-story featured-story has-image/);
+  assert.match(landing, /href="\/writing\/automatic-file\/"/,'New Markdown did not use the landing layout.');
+  assert.match(landing, /alt="Temporary acceptance illustration\."/,'Optional card image was not rendered.');
+  const page2 = await readFile(join(work,'dist/writing/page/2/index.html'),'utf8');
+  assert.ok(!page2.includes('/writing/technical-sample/'),'Older featured story duplicated in Latest pagination.');
+  assert.ok(!page2.includes('featured-story'),'Feature should only appear on page1.');
+  for(let i=1;i<=6;i++) assert.ok((landing+page2).includes(`/writing/pagination-fixture-${i}/`),'A pagination entry was lost.');
+  // Remove the explicit selection: there must be no arbitrary feature, and all writing returns to Latest.
+  await writeFile(technicalPath,technicalSource.replace('featured: true','featured: false'));
+  const noFeature = build(); assert.equal(noFeature.status,0,noFeature.stderr+'\n'+noFeature.stdout);
+  const noFeatureLanding = await readFile(join(work,'dist/writing/index.html'),'utf8');
+  assert.ok(!noFeatureLanding.includes('featured-story'),'No selected article should produce no feature.');
+  assert.ok((await readFile(join(work,'dist/writing/page/2/index.html'),'utf8')).includes('/writing/technical-sample/'),'Unfeatured story missing from Latest.');
   for(const file of await textFiles(join(work,'dist'))) { const text=await readFile(file,'utf8'); assert.ok(!/draft-sentinel|future-sentinel/.test(text),`Unpublished content leaked into ${file}`); }
   for(const collection of ['writing','archive','projects']) for(const id of ['draft-sentinel','future-sentinel']) assert.equal(await exists(join(work,'dist',collection==='archive'?'writing/archive':collection,id,'index.html')),false);
   const rss=await readFile(join(work,'dist/rss.xml'),'utf8'); const sitemap=await readFile(join(work,'dist/sitemap.xml'),'utf8'); const search=await readFile(join(work,'dist/search-index.json'),'utf8');

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isPublished, pageCount, pageEntries, plainText, readingMinutes, relatedScore, taxonomySlug } from '../src/lib/publishing-policy.ts';
+import { featuredEntry, latestWritingEntries, isPublished, pageCount, pageEntries, plainText, readingMinutes, relatedScore, taxonomySlug } from '../src/lib/publishing-policy.ts';
 import { escapeXml } from '../src/lib/xml.ts';
 const now = Date.parse('2026-10-12T12:00:00Z');
 test('publication eligibility excludes drafts and future dates at the UTC boundary', () => {
@@ -20,6 +20,22 @@ test('pagination has no empty trailing page and retains all entries in order', (
   assert.equal(pageCount(0), 1); assert.equal(pageCount(6), 1); assert.equal(pageCount(7), 2);
   const entries = Array.from({length:13},(_,i)=>i);
   assert.deepEqual([1,2,3].flatMap(page=>pageEntries(entries,page)),entries);
+});
+test('featured selection is explicit, optional, independent of ordering, and rejects ambiguity', () => {
+  const ordinary = { data: { featured: false } };
+  const selected = { data: { featured: true } };
+  assert.equal(featuredEntry([]), undefined);
+  assert.equal(featuredEntry([ordinary]), undefined);
+  assert.equal(featuredEntry([ordinary, selected]), selected);
+  assert.equal(featuredEntry([selected, ordinary]), selected);
+  assert.throws(() => featuredEntry([selected, { data: { featured: true } }]), /Only one published Writing article/);
+});
+test('Latest pagination excludes an older feature and keeps every other entry once', () => {
+  const entries = Array.from({ length: 14 }, (_, id) => ({ id, data: { featured: id === 12 } }));
+  const latest = latestWritingEntries(entries);
+  assert.deepEqual([1,2,3].flatMap(page => pageEntries(latest, page)), entries.filter(entry => entry.id !== 12));
+  assert.equal(pageCount(latest.length), 3);
+  assert.deepEqual(latestWritingEntries([]), []);
 });
 test('taxonomy URL normalization is deterministic', () => { assert.equal(taxonomySlug(' Systems & Clarity '), 'systems-clarity'); assert.equal(taxonomySlug('Café'), 'cafe'); });
 test('related articles use shared topics with case-insensitive matching', () => { assert.equal(relatedScore({category:'Leadership',tags:['Trust']},{category:'leadership',tags:['trust','Systems']}),3); assert.equal(relatedScore({category:'Leadership',tags:[]},{category:'Engineering',tags:[]}),0); });

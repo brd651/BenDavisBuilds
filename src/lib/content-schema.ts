@@ -6,7 +6,7 @@ export function publishingSchema({ image }: SchemaContext, archive = false) {
   return z.object({
     title: z.string().trim().min(1).max(140), description: z.string().trim().min(1).max(300),
     category: label, tags: z.array(label).max(12).default([]),
-    draft: z.boolean().default(false), sample: z.boolean().default(false),
+    draft: z.boolean().default(false), sample: z.boolean().default(false), featured: z.boolean().default(false),
     publishedAt: date.optional(), updatedAt: date.optional(), author: z.string().trim().min(1).max(80).optional(),
     image: image().optional(), imageAlt: z.string().trim().min(1).max(240).optional(), imageCaption: z.string().trim().min(1).max(300).optional(),
     ...(archive ? { historical: z.literal(true), originalSource: z.url({ protocol: /^https?$/ }).optional() } : {}),

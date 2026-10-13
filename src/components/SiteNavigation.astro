@@ -1,4 +1,5 @@
 ---
+import tokens from '../../built_signal_v1/design/built-signal.tokens.json';
 const path = Astro.url.pathname;
 const destinations = [
   { href: '/about/', label: 'About Me' },
@@ -9,14 +10,14 @@ const destinations = [
   { href: '/contact/', label: 'Contact' },
 ];
 ---
-<div class="navigation-group">
+<div class="navigation-group" style={{ '--navigation-ember': tokens.optionalHistoricalAccent.classicEmber }}>
   <button class="mobile-navigation-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
   <nav id="primary-navigation" aria-label="Main navigation">
     <ul class="primary-links">{destinations.map(({href, label, children}) => <li class="navigation-item">
       <a href={href} aria-current={path === href ? 'page' : undefined} class:list={{ 'active-section': path.startsWith(href) }}>{label}</a>
       {children && <details class="navigation-dropdown">
-        <summary aria-label={`${label} options`} aria-controls={`${label.toLowerCase()}-destinations`}><span aria-hidden="true">⌄</span></summary>
-        <ul class="dropdown-links" id={`${label.toLowerCase()}-destinations`}>{children.map(([url, name]) => <li><a href={url} aria-current={path === url ? 'page' : undefined}>{name}</a></li>)}</ul>
+        <summary aria-label={`${label} options`} aria-controls={`${label.toLowerCase()}-destinations`}><svg class="navigation-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4" /></svg></summary>
+        <ul class="dropdown-links" data-theme="dark" id={`${label.toLowerCase()}-destinations`}>{children.map(([url, name]) => <li><a href={url} aria-current={path === url ? 'page' : undefined}>{name}</a></li>)}</ul>
       </details>}
     </li>)}</ul>
   </nav>
@@ -71,28 +72,49 @@ const destinations = [
 </script>
 <style>
   .navigation-group { min-width: 0; }
-  .primary-links { align-items: center; gap: .2rem .8rem; }
-  .navigation-item { display: flex; align-items: center; position: relative; }
-  .navigation-item > a { min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap; }
-  .navigation-item > a.active-section { color: var(--bs-text); }
-  .navigation-dropdown summary { display: grid; place-items: center; width: 28px; min-height: 44px; cursor: pointer; list-style: none; color: var(--bs-muted); }
+  .primary-links { align-items: center; gap: .25rem 1.125rem; }
+  .navigation-item { display: flex; align-items: center; gap: 6px; position: relative; }
+  .primary-links .navigation-item > a { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0; white-space: nowrap; font-size: .875rem; font-weight: 500; line-height: 1.25; color: var(--bs-muted); text-decoration: none; }
+  .primary-links .navigation-item > a:hover,
+  .primary-links .navigation-item > a:focus-visible,
+  .primary-links .navigation-item > a.active-section { color: var(--bs-text); text-decoration: none; }
+  .navigation-item > a.active-section::after { content: ''; position: absolute; left: 0; right: 0; bottom: 5px; height: 2px; background: var(--navigation-ember); }
+  .navigation-dropdown summary { display: flex; align-items: center; width: 24px; min-height: 44px; padding: 0; color: var(--bs-muted); cursor: pointer; list-style: none; border-radius: 3px; }
   summary::-webkit-details-marker { display: none; }
-  summary:hover, .navigation-dropdown[open] summary { color: var(--bs-text); background: var(--bs-surface); }
-  .dropdown-links { display: block; position: absolute; top: 100%; left: 0; min-width: 13rem; padding: .5rem; background: var(--bs-page); border: 1px solid var(--bs-border); z-index: 20; box-shadow: 0 .5rem 1rem color-mix(in srgb, var(--bs-page) 50%, transparent); }
-  .dropdown-links a { width: 100%; min-height: 44px; padding: .6rem .75rem !important; }
-  .dropdown-links a:hover { background: var(--bs-surface); color: var(--bs-text); }
-  .mobile-navigation-toggle { min-height: 44px; padding: .5rem .75rem; font: inherit; font-size: .875rem; color: var(--bs-text); background: var(--bs-page); border: 1px solid var(--bs-border); cursor: pointer; }
-  .mobile-navigation-toggle span { margin-left: .5rem; }
+  .navigation-dropdown summary:hover,
+  .navigation-dropdown summary:focus-visible,
+  .navigation-dropdown[open] summary { color: var(--bs-text); }
+  .navigation-chevron { display: block; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 140ms ease; }
+  .navigation-dropdown[open] .navigation-chevron { transform: rotate(180deg); }
+  .dropdown-links { display: block; position: absolute; top: calc(100% + 6px); left: 0; min-width: 14rem; padding: .5rem; margin: 0; background: var(--bs-surface); color: var(--bs-text); border: 1px solid var(--bs-line); border-radius: 6px; z-index: 30; box-shadow: 0 8px 24px color-mix(in srgb, var(--bs-page) 35%, transparent); }
+  .dropdown-links li + li { margin-top: 2px; }
+  .dropdown-links li a { display: flex; align-items: center; width: 100%; min-height: 44px; padding: .65rem .75rem; border-radius: 3px; font-size: .875rem; font-weight: 500; line-height: 1.4; color: var(--bs-muted); text-decoration: none; }
+  .dropdown-links li a:hover,
+  .dropdown-links li a:focus-visible,
+  .dropdown-links li a[aria-current="page"] { color: var(--bs-text); background: color-mix(in srgb, var(--bs-raised) 65%, transparent); text-decoration: none; }
+  .dropdown-links li a[aria-current="page"] { box-shadow: inset 2px 0 var(--navigation-ember); }
+  .dropdown-links a:focus-visible { outline: 2px solid var(--bs-focus); outline-offset: -2px; }
+  .mobile-navigation-toggle { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; font: inherit; font-size: .875rem; font-weight: 500; color: var(--bs-text); background: var(--bs-page); border: 1px solid var(--bs-border); border-radius: 3px; cursor: pointer; }
   @media (max-width: 1100px) {
     :global([data-navigation-enhanced]) .mobile-navigation-toggle[hidden] { display: inline-flex !important; }
     :global([data-navigation-enhanced]) .navigation-group:not([data-menu-open="true"]) nav { display: none; }
     .navigation-group { width: 100%; order: 4; }
+    #primary-navigation { position: relative; }
     .primary-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem 1rem; padding-top: .75rem; }
-    .navigation-item > a { white-space: normal; min-width: 0; }
+    .primary-links .navigation-item > a { white-space: normal; min-width: 0; }
     .dropdown-links { max-width: calc(100vw - 2rem); }
-    .navigation-item:nth-child(even) .dropdown-links { left: auto; right: 0; }
-    .navigation-item { flex-wrap: wrap; align-content: start; }
-
+    .navigation-item:nth-child(3n) .dropdown-links { left: auto; right: 0; }
+    .navigation-item { position: static; flex-wrap: wrap; align-content: start; }
   }
-  @media (max-width: 550px) { .primary-links { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+  @media (max-width: 550px) {
+    .primary-links { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .navigation-item:nth-child(3n) .dropdown-links { left: 0; right: auto; }
+    .navigation-item:nth-child(even) .dropdown-links { left: auto; right: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .navigation-chevron { transition: none; } }
+  @media (forced-colors: active) {
+    .navigation-item > a.active-section::after { background: Highlight; }
+    .dropdown-links { border-color: CanvasText; }
+    .dropdown-links li a[aria-current="page"] { border-left: 2px solid Highlight; }
+  }
 </style>

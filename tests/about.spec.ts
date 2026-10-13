@@ -115,6 +115,7 @@ for (const javaScriptEnabled of [false, true]) test(`About fallbacks and 200% te
   expect(await page.locator('html').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
   await page.emulateMedia({ forcedColors: 'active' });
   await expect(page.locator('#marine-corps .milestone')).toBeVisible();
+  if (javaScriptEnabled) await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
   await context.close();
 });

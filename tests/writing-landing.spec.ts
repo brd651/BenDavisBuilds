@@ -2,18 +2,18 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { chooseTheme } from './theme';
 
-const profiles = [[390,844],[768,1024],[1440,900],[1920,1080],[2560,1440],[3840,2160]] as const;
+const profiles = [[390,844],[768,1024],[1366,768],[1440,900],[1920,1080],[2560,1440],[3840,2160]] as const;
 for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
   test(`Writing publication ${theme} ${width}px: editorial hierarchy, images and accessibility`, async ({ page, request }) => {
     await page.setViewportSize({ width, height });
     await page.addInitScript(t => localStorage.setItem('built-signal-theme', t), theme);
     expect((await page.goto('/writing/'))?.status()).toBe(200);
-    await expect(page.locator('h1')).toHaveText('Writing & Field Notes');
+    await expect(page.locator('h1')).toHaveText('Writing & Field Notes.');
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page.locator('.demonstration-notice')).toContainText('not genuine published articles');
     const feature = page.getByRole('region', { name: 'Featured writing' });
     await expect(feature.getByRole('heading', { level: 2 })).toHaveText('Demonstration: from Markdown to a static article');
-    await expect(feature).toContainText('Featured demonstration');
+    await expect(feature).toContainText('Featured sample');
     await expect(feature).toContainText('min read (estimate)');
     await expect(feature.locator('time')).toHaveCount(0);
     await expect(feature.locator('.story-category')).toHaveAttribute('href', '/writing/category/engineering/');
@@ -26,7 +26,13 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     await expect(feature.locator('.story-meta')).toContainText(`${estimate} min read (estimate)`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect((await page.locator('.writing-landing').boundingBox())!.width).toBeLessThanOrEqual(1200);
-    expect((await page.locator('.writing-hero').boundingBox())!.height).toBeLessThan(width <= 700 ? 380 : 300);
+    expect((await page.locator('.writing-hero').boundingBox())!.height).toBeLessThan(width <= 700 ? 600 : 421);
+    const hero = page.locator('.writing-hero img');
+    await expect(hero).toHaveAttribute('loading', 'eager');
+    await expect(hero).toHaveAttribute('fetchpriority', 'high');
+    await expect(page.locator('.writing-hero source[type="image/avif"]')).toHaveAttribute('srcset', /480w.*768w.*1120w.*1672w/);
+    expect(await hero.evaluate(el => el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0)).toBe(true);
+    if (width <= 1100) await page.getByRole('button', {name: 'Menu'}).click();
     await expect(page.locator('.writing-landing a[href="/projects/"]')).toHaveCount(0);
     await expect(page.locator('.site-header').getByRole('link', { name: 'Projects', exact: true })).toHaveCount(1);
     await expect(page.getByRole('complementary', { name: 'The historical archive.' })).toBeVisible();

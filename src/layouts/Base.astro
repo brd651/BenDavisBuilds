@@ -4,11 +4,11 @@ import BrandMark from '../components/BrandMark.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
 import ThemeControl from '../components/ThemeControl.astro';
+import SiteNavigation from '../components/SiteNavigation.astro';
 import HeroViewport from '../components/HeroViewport.astro';
 interface Props { title: string; description?: string; homepageHero?: boolean; sampleContent?: boolean; socialMetadata?: boolean; articleMetadata?: { publishedAt?: string; updatedAt?: string; author?: string; image?: string; imageAlt?: string } }
 const { title, homepageHero = false, sampleContent = true, socialMetadata = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
 const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
-const nav = [['/', 'Home'], ['/about/', 'About'], ['/writing/', 'Writing'], ['/projects/', 'Projects'], ['/mentorship/', 'Mentorship'], ['/contact/', 'Contact']];
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
 const articleMetadata = Astro.props.articleMetadata;
@@ -52,6 +52,7 @@ const articleMetadata = Astro.props.articleMetadata;
     <link rel="manifest" href="/manifest.json" />
     <script is:inline>
       (() => {
+        document.documentElement.dataset.navigationEnhanced = 'true';
         let preference = 'dark';
         try { const saved = localStorage.getItem('built-signal-theme'); if (['dark', 'light', 'system'].includes(saved)) preference = saved; } catch {}
         document.documentElement.dataset.themePreference = preference;
@@ -63,9 +64,9 @@ const articleMetadata = Astro.props.articleMetadata;
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="development-notice"><span class="notice-label">Development preview</span><span>{sampleContent ? 'Sample content · design in progress' : 'Sample content elsewhere · design in progress'}</span></div>
     <header class:list={["site-header", "shell", { "homepage-header": homepageHero }]}>
-      <a class="wordmark" href="/" aria-label="Ben Davis Builds home"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
-      <nav aria-label="Main navigation"><ul>{nav.map(([href, label]) => <li><a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href!)) ? 'page' : undefined}>{label}</a></li>)}</ul></nav>
-      {homepageHero && <HomepageSearch />}
+      <a class="wordmark" href="/"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
+      <SiteNavigation />
+      <HomepageSearch />
       <ThemeControl />
     </header>
     {homepageHero && <HeroViewport />}
@@ -114,9 +115,11 @@ const articleMetadata = Astro.props.articleMetadata;
 </html>
 
 <style>
+  .site-header { gap: .75rem; }
+  @media (max-width: 1100px) { .site-header :global(.wordmark) { margin-right: auto; } }
   .homepage-main { width: 100%; }
   .homepage-header { min-height: 112px; gap: 1rem; }
-  .homepage-header :global(.theme-control[hidden]) { display: flex !important; visibility: hidden; }
+  .site-header :global(.theme-control[hidden]) { display: flex !important; visibility: hidden; }
   .homepage-header :global(.brand-mark) { width: 3.5rem; }
   @media (max-width:700px) { .homepage-header { gap: .75rem; } .homepage-header :global(.brand-mark) { width: 2.5rem; } }
 </style>

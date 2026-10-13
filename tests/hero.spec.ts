@@ -51,7 +51,8 @@ test('homepage search filters real pages and Escape returns keyboard focus', asy
   await expect(search).toBeFocused();
   await expect(page.locator('.homepage-search')).not.toHaveAttribute('open');
   await page.goto('/about/');
-  await expect(page.locator('.homepage-search, .topographic-overlay')).toHaveCount(0);
+  await expect(page.locator('.homepage-search')).toHaveCount(1);
+  await expect(page.locator('.topographic-overlay')).toHaveCount(0);
 });
 
 test('without JavaScript search navigation still works', async ({ browser }) => {

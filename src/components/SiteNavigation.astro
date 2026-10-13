@@ -1,0 +1,98 @@
+---
+const path = Astro.url.pathname;
+const destinations = [
+  { href: '/about/', label: 'About Me' },
+  { href: '/leadership/', label: 'Leadership' },
+  { href: '/writing/', label: 'Writing', children: [['/writing/', 'All Writing'], ['/writing/archive/', 'Historical Archive'], ['/writing/search/', 'Search Articles']] },
+  { href: '/projects/', label: 'Projects', children: [['/projects/', 'All Projects'], ['/lab/', 'Homelab']] },
+  { href: '/mentorship/', label: 'Mentorship' },
+  { href: '/contact/', label: 'Contact' },
+];
+---
+<div class="navigation-group">
+  <button class="mobile-navigation-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" hidden>Menu <span aria-hidden="true">☰</span></button>
+  <nav id="primary-navigation" aria-label="Main navigation">
+    <ul class="primary-links">{destinations.map(({href, label, children}) => <li class="navigation-item">
+      <a href={href} aria-current={path === href ? 'page' : undefined} class:list={{ 'active-section': path.startsWith(href) }}>{label}</a>
+      {children && <details class="navigation-dropdown">
+        <summary aria-label={`${label} options`} aria-controls={`${label.toLowerCase()}-destinations`}><span aria-hidden="true">⌄</span></summary>
+        <ul class="dropdown-links" id={`${label.toLowerCase()}-destinations`}>{children.map(([url, name]) => <li><a href={url} aria-current={path === url ? 'page' : undefined}>{name}</a></li>)}</ul>
+      </details>}
+    </li>)}</ul>
+  </nav>
+</div>
+<script>
+  const group = document.querySelector<HTMLElement>('.navigation-group');
+  const toggle = group?.querySelector<HTMLButtonElement>('.mobile-navigation-toggle');
+  const nav = group?.querySelector<HTMLElement>('nav');
+  const mobile = matchMedia('(max-width: 1100px)');
+  const dropdowns = Array.from(group?.querySelectorAll<HTMLDetailsElement>('.navigation-dropdown') ?? []);
+  function closeDropdowns() { dropdowns.forEach(dropdown => { dropdown.open = false; dropdown.querySelector('summary')?.setAttribute('aria-expanded', 'false'); }); }
+  function setMenu(open: boolean) {
+    if (!toggle || !nav) return;
+    group!.dataset.menuOpen = String(open);
+    toggle.setAttribute('aria-expanded', String(open));
+    nav.hidden = mobile.matches && !open;
+    if (!open) closeDropdowns();
+  }
+  if (group && toggle && nav) {
+    toggle.hidden = !mobile.matches;
+    setMenu(false);
+    toggle.addEventListener('click', () => setMenu(toggle.getAttribute('aria-expanded') !== 'true'));
+    mobile.addEventListener('change', () => { toggle.hidden = !mobile.matches; setMenu(false); });
+    dropdowns.forEach(dropdown => {
+      const summary = dropdown.querySelector('summary')!;
+      summary.setAttribute('aria-expanded', String(dropdown.open));
+      dropdown.addEventListener('toggle', () => {
+        summary.setAttribute('aria-expanded', String(dropdown.open));
+        if (dropdown.open) dropdowns.filter(other => other !== dropdown).forEach(other => { other.open = false; });
+      });
+      dropdown.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && dropdown.open) {
+          event.preventDefault(); event.stopPropagation(); dropdown.open = false;
+          summary.setAttribute('aria-expanded', 'false'); summary.focus();
+        }
+      });
+      dropdown.addEventListener('focusout', event => {
+        if (event.relatedTarget instanceof Node && !dropdown.contains(event.relatedTarget)) { dropdown.open = false; summary.setAttribute('aria-expanded', 'false'); }
+      });
+    });
+    group.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && mobile.matches && toggle.getAttribute('aria-expanded') === 'true') { event.preventDefault(); setMenu(false); toggle.focus(); }
+    });
+    document.addEventListener('click', event => {
+      if (event.target instanceof Node) {
+        dropdowns.forEach(dropdown => { if (!dropdown.contains(event.target as Node)) { dropdown.open = false; dropdown.querySelector('summary')?.setAttribute('aria-expanded', 'false'); } });
+        if (!group.contains(event.target)) setMenu(false);
+      }
+    });
+    group.addEventListener('focusout', event => { if (event.relatedTarget instanceof Node && !group.contains(event.relatedTarget)) setMenu(false); });
+  }
+</script>
+<style>
+  .navigation-group { min-width: 0; }
+  .primary-links { align-items: center; gap: .2rem .8rem; }
+  .navigation-item { display: flex; align-items: center; position: relative; }
+  .navigation-item > a { min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap; }
+  .navigation-item > a.active-section { color: var(--bs-text); }
+  .navigation-dropdown summary { display: grid; place-items: center; width: 28px; min-height: 44px; cursor: pointer; list-style: none; color: var(--bs-muted); }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover, .navigation-dropdown[open] summary { color: var(--bs-text); background: var(--bs-surface); }
+  .dropdown-links { display: block; position: absolute; top: 100%; left: 0; min-width: 13rem; padding: .5rem; background: var(--bs-page); border: 1px solid var(--bs-border); z-index: 20; box-shadow: 0 .5rem 1rem color-mix(in srgb, var(--bs-page) 50%, transparent); }
+  .dropdown-links a { width: 100%; min-height: 44px; padding: .6rem .75rem !important; }
+  .dropdown-links a:hover { background: var(--bs-surface); color: var(--bs-text); }
+  .mobile-navigation-toggle { min-height: 44px; padding: .5rem .75rem; font: inherit; font-size: .875rem; color: var(--bs-text); background: var(--bs-page); border: 1px solid var(--bs-border); cursor: pointer; }
+  .mobile-navigation-toggle span { margin-left: .5rem; }
+  @media (max-width: 1100px) {
+    :global([data-navigation-enhanced]) .mobile-navigation-toggle[hidden] { display: inline-flex !important; }
+    :global([data-navigation-enhanced]) .navigation-group:not([data-menu-open="true"]) nav { display: none; }
+    .navigation-group { width: 100%; order: 4; }
+    .primary-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem 1rem; padding-top: .75rem; }
+    .navigation-item > a { white-space: normal; min-width: 0; }
+    .dropdown-links { max-width: calc(100vw - 2rem); }
+    .navigation-item:nth-child(even) .dropdown-links { left: auto; right: 0; }
+    .navigation-item { flex-wrap: wrap; align-content: start; }
+
+  }
+  @media (max-width: 550px) { .primary-links { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+</style>

@@ -11,9 +11,9 @@ const widths = data.image ? [480, 768, 1120, 1600].filter(width => width <= data
 <article class:list={['writing-story', { 'featured-story': featured, 'has-image': Boolean(data.image) }]}>
   <div class="story-copy">
     <div class="story-labels">
-      {featured && <span class="feature-label">Featured {data.sample ? 'demonstration' : 'article'}</span>}
+      {featured && <span class="feature-label">Featured {data.sample ? 'sample' : 'article'}</span>}
       <a class="story-category" href={`/writing/category/${taxonomySlug(data.category)}/`}>{data.category}</a>
-      {!featured && data.sample && <span class="sample-label">Demonstration</span>}
+      {!featured && data.sample && <span class="sample-label">Sample</span>}
     </div>
     <Heading><a class="story-title" href={articleUrl(entry)}>{data.title}</a></Heading>
     <p class="story-description">{data.description}</p>
@@ -21,17 +21,19 @@ const widths = data.image ? [480, 768, 1120, 1600].filter(width => width <= data
     <a class="story-action" href={articleUrl(entry)} aria-label={`${data.sample ? 'Read demonstration' : 'Read article'}: ${data.title}`}>{data.sample ? 'Read demonstration' : 'Read article'} <span aria-hidden="true">↗</span></a>
   </div>
   {data.image && <figure class="story-image">
-    <Picture src={data.image} alt={data.imageAlt!} widths={widths.length ? widths : [data.image.width]} formats={['avif', 'webp']} sizes={featured ? '(min-width: 1280px) 480px, (min-width: 850px) 40vw, calc(100vw - 4rem)' : '(min-width: 1280px) 380px, (min-width: 700px) 45vw, calc(100vw - 4rem)'} loading={featured ? 'eager' : 'lazy'} decoding="async" />
+    <Picture src={data.image} alt={data.imageAlt!} widths={widths.length ? widths : [data.image.width]} formats={['avif', 'webp']} sizes={featured ? '(min-width: 1232px) 610px, (min-width: 851px) 50vw, (min-width: 701px) calc(100vw - 3rem), calc(100vw - 2rem)' : '(min-width: 1280px) 380px, (min-width: 700px) 45vw, calc(100vw - 4rem)'} loading={featured ? 'eager' : 'lazy'} decoding="async" />
     {featured && data.imageCaption && <figcaption>{data.imageCaption}</figcaption>}
   </figure>}
 </article>
 <style>
-  .writing-story { display: flex; flex-direction: column; min-width: 0; border-top: 2px solid var(--bs-brass); background: var(--bs-surface); padding: 1.75rem; }
+  .writing-story { display: flex; flex-direction: column; min-width: 0; border-top: 1px solid var(--bs-line); padding: 1.25rem 0; }
+  .writing-story:focus-within { border-top-color: var(--bs-focus); }
+  .writing-story:hover { border-top-color: var(--bs-brass); }
   .story-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-  .story-labels { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; margin-bottom: 1.25rem; font-size: .875rem; }
+  .story-labels { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; margin-bottom: .75rem; font-size: .875rem; }
   .story-category { color: var(--bs-accentText); text-underline-offset: .3em; }
   .feature-label { font-size: .75rem; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
-  .sample-label { color: var(--bs-muted); font-size: .8125rem; }
+  .sample-label { color: var(--bs-muted); font-size: .75rem; padding: .1rem .45rem; border: 1px solid var(--bs-line); border-radius: 3px; }
   h2, h3 { margin-bottom: 1rem; }
   h3 { font-size: clamp(1.5rem, 2vw, 1.85rem); line-height: 1.25; }
   .story-title { text-decoration: none; }
@@ -46,13 +48,13 @@ const widths = data.image ? [480, 768, 1120, 1600].filter(width => width <= data
   .writing-story:not(.featured-story) .story-image { order: -1; margin: 0 0 1.5rem; }
   .story-image :global(img) { display: block; width: 100%; height: auto; }
   .story-image figcaption { margin: .75rem 0 0; color: var(--bs-muted); font-size: .8125rem; line-height: 1.65; }
-  .featured-story { padding: clamp(1.5rem, 3vw, 3rem); border: 1px solid var(--bs-line); border-top: 3px solid var(--bs-brass); }
+  .featured-story { padding: 1rem 0 1.5rem; border-top: 2px solid var(--bs-brass); border-bottom: 1px solid var(--bs-line); }
   .featured-story h2 { font-size: clamp(2rem, 3.2vw, 3rem); line-height: 1.13; max-width: 23ch; }
   .featured-story .story-meta { margin-top: 0; }
   .featured-story .story-action { margin-top: .25rem; }
-  .featured-story.has-image { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 3rem; align-items: center; }
-  .featured-story .story-image { margin: 0; }
+  .featured-story.has-image { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: center; }
+  .featured-story .story-image { margin: 0; order: -1; }
   @media (max-width: 850px) { .featured-story.has-image { grid-template-columns: minmax(0, 1fr); gap: 2rem; } .featured-story .story-image { max-width: 650px; } }
-  @media (max-width: 450px) { .writing-story { padding: 1.25rem; } .story-labels { gap: .4rem .75rem; } }
+  @media (max-width: 450px) { .writing-story { padding-block: 1.25rem; } .story-labels { gap: .4rem .75rem; } }
   @media (forced-colors: active) { .writing-story { border: 1px solid CanvasText; } }
 </style>

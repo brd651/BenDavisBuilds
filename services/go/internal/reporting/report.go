@@ -24,18 +24,30 @@ type Table struct {
 func BuildTables(ctx context.Context, db *sql.DB, now time.Time) ([]Table, error) {
 	utc := now.UTC()
 	startDay := time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC).Unix()
-	week := utc.AddDate(0, 0, -6).Unix()
-	month := utc.AddDate(0, -1, 0).Unix()
-	tables := []Table{{Name: "Overview", Values: [][]any{{"Metric", "Value", "As of UTC"},
-		{"Visitors today", scalar(ctx, db, `SELECT count(DISTINCT COALESCE(visitor_id,session_id)) FROM sessions WHERE started_at>=?`, startDay), utc.Format(time.RFC3339)},
-		{"Sessions today", scalar(ctx, db, `SELECT count(*) FROM sessions WHERE started_at>=?`, startDay), utc.Format(time.RFC3339)},
-		{"Visitors this week", scalar(ctx, db, `SELECT count(DISTINCT COALESCE(visitor_id,session_id)) FROM sessions WHERE started_at>=?`, week), utc.Format(time.RFC3339)},
-		{"Visitors this month", scalar(ctx, db, `SELECT count(DISTINCT COALESCE(visitor_id,session_id)) FROM sessions WHERE started_at>=?`, month), utc.Format(time.RFC3339)},
-		{"Returning visitor percentage", scalar(ctx, db, `SELECT CASE WHEN count(*)=0 THEN 0.0 ELSE 100.0*sum(CASE WHEN visits>1 THEN 1 ELSE 0 END)/count(*) END FROM (SELECT visitor_id,count(*) visits FROM sessions WHERE visitor_id IS NOT NULL GROUP BY visitor_id)`), utc.Format(time.RFC3339)},
-		{"Contact submissions", scalar(ctx, db, `SELECT count(*) FROM events WHERE type='contact_submitted' AND occurred_at>=?`, startDay), utc.Format(time.RFC3339)},
-		{"Mentorship intent", scalar(ctx, db, `SELECT count(*) FROM events WHERE type='mentorship_intent' AND occurred_at>=?`, startDay), utc.Format(time.RFC3339)},
-		{"Booking intent", scalar(ctx, db, `SELECT count(*) FROM events WHERE type='booking_intent' AND occurred_at>=?`, startDay), utc.Format(time.RFC3339)},
-	}}}
+	week := utc.AddDate(0, 0, -7).Unix()
+	month := utc.AddDate(0, 0, -30).Unix()
+	overview := [][]any{{"Metric", "Value", "As of UTC"}}
+	metrics := []struct {
+		label, query string
+		args         []any
+	}{
+		{"Visitors today", `SELECT count(DISTINCT COALESCE(visitor_id,id)) FROM sessions WHERE started_at>=?`, []any{startDay}},
+		{"Sessions today", `SELECT count(*) FROM sessions WHERE started_at>=?`, []any{startDay}},
+		{"Visitors in last 7 days", `SELECT count(DISTINCT COALESCE(visitor_id,id)) FROM sessions WHERE started_at>=?`, []any{week}},
+		{"Visitors in last 30 days", `SELECT count(DISTINCT COALESCE(visitor_id,id)) FROM sessions WHERE started_at>=?`, []any{month}},
+		{"Returning visitor percentage", `SELECT CASE WHEN count(*)=0 THEN 0.0 ELSE 100.0*sum(CASE WHEN visits>1 THEN 1 ELSE 0 END)/count(*) END FROM (SELECT visitor_id,count(*) visits FROM sessions WHERE visitor_id IS NOT NULL GROUP BY visitor_id)`, nil},
+		{"Contact submissions", `SELECT count(*) FROM events WHERE type='contact_submitted' AND occurred_at>=?`, []any{startDay}},
+		{"Mentorship intent", `SELECT count(*) FROM events WHERE type='mentorship_intent' AND occurred_at>=?`, []any{startDay}},
+		{"Booking intent", `SELECT count(*) FROM events WHERE type='booking_intent' AND occurred_at>=?`, []any{startDay}},
+	}
+	for _, metric := range metrics {
+		value, err := scalar(ctx, db, metric.query, metric.args...)
+		if err != nil {
+			return nil, fmt.Errorf("query overview %s: %w", metric.label, err)
+		}
+		overview = append(overview, []any{metric.label, value, utc.Format(time.RFC3339)})
+	}
+	tables := []Table{{Name: "Overview", Values: overview}}
 	queries := []struct {
 		name, query string
 		header      []any
@@ -139,13 +151,13 @@ func safePath(path string) string {
 	return path
 }
 
-func scalar(ctx context.Context, db *sql.DB, q string, args ...any) any {
+func scalar(ctx context.Context, db *sql.DB, q string, args ...any) (any, error) {
 	var v any
 	if err := db.QueryRowContext(ctx, q, args...).Scan(&v); err != nil {
-		return 0
+		return nil, err
 	}
 	if b, ok := v.([]byte); ok {
-		return string(b)
+		return string(b), nil
 	}
-	return v
+	return v, nil
 }

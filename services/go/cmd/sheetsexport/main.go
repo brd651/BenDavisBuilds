@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/brd651/BenDavisBuilds/services/go/internal/reporting"
@@ -52,13 +53,18 @@ func main() {
 	if err := budget.Init(ctx); err != nil {
 		fatal("initialize persisted request budget", err)
 	}
+	if err := budget.MarkAttempt(ctx, now); err != nil {
+		fatal("record export attempt", err)
+	}
 	release, err := budget.Acquire(ctx, !*manual)
 	if err != nil {
 		if errors.Is(err, reporting.ErrDeferred) {
+			_ = budget.MarkDeferred(ctx, "hourly_gate")
 			slog.Info("export deferred by hourly schedule")
 			return
 		}
-		if err == reporting.ErrBusy {
+		if errors.Is(err, reporting.ErrBusy) {
+			_ = budget.MarkDeferred(ctx, "another_export_active")
 			slog.Info("export deferred because another export is active")
 			return
 		}
@@ -68,32 +74,54 @@ func main() {
 	credentialPath := os.Getenv("BDB_SHEETS_CREDENTIALS")
 	spreadsheet := os.Getenv("BDB_SPREADSHEET_ID")
 	if credentialPath == "" || spreadsheet == "" {
+		_ = budget.MarkFailure(ctx)
 		fatal("BDB_SHEETS_CREDENTIALS and BDB_SPREADSHEET_ID are required")
 	}
-	credential, err := os.ReadFile(credentialPath)
+	credential, err := readCredential(credentialPath)
 	if err != nil {
-		fatal("read protected Sheets credential", err)
+		_ = budget.MarkFailure(ctx)
+		fatal(err.Error())
 	}
 	config, err := google.JWTConfigFromJSON(credential, "https://www.googleapis.com/auth/spreadsheets")
 	for i := range credential {
 		credential[i] = 0
 	}
 	if err != nil {
-		fatal("load Sheets service-account configuration", err)
+		_ = budget.MarkFailure(ctx)
+		fatal("invalid Sheets service-account configuration")
 	}
 	client := &reporting.Client{HTTP: oauth2.NewClient(ctx, config.TokenSource(ctx)), Budget: budget, SpreadsheetID: spreadsheet}
 	if err := client.Export(ctx, tables); err != nil {
 		if errors.Is(err, reporting.ErrDeferred) {
+			_ = budget.MarkDeferred(ctx, "request_budget")
 			slog.Info("export deferred because request budget is exhausted")
 			return
 		}
-		fatal("export Sheets report", err)
+		_ = budget.MarkFailure(ctx)
+		// The API client intentionally returns status-only and sanitized errors.
+		if strings.Contains(err.Error(), "HTTP ") {
+			fatal("Sheets API request failed", err)
+		}
+		fatal("Sheets export failed")
 	}
 	if err := budget.MarkSuccess(ctx, time.Now()); err != nil {
 		fatal("record export success", err)
 	}
 	slog.Info("aggregate Sheets export completed", "tables", len(tables))
 }
+
+func readCredential(path string) ([]byte, error) {
+	info, err := os.Lstat(path)
+	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || info.Mode().Perm()&0400 == 0 {
+		return nil, errors.New("Sheets credential must be a readable regular file with owner-only permissions")
+	}
+	credential, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errors.New("unable to read protected Sheets credential")
+	}
+	return credential, nil
+}
+
 func fatal(message string, err ...error) {
 	if len(err) > 0 {
 		slog.Error(message, "error", err[0])

@@ -46,14 +46,20 @@ for(const privacy of ['dnt','gpc','storage-failure']) test(`analytics respect ${
 
 for(const theme of ['dark','light']) test(`Contact lazy browser proof and safe delivery states in ${theme}`,async({page})=>{
  await page.addInitScript(t=>localStorage.setItem('built-signal-theme',t),theme);
- let challenges=0;let submitted:any;let workerRequests=0;
+ let challenges=0;let submitted:any;let workerRequests=0;const batches:any[]=[];
+ await page.route('**/api/telemetry',async route=>{batches.push(JSON.parse(route.request().postData()!));await route.fulfill({status:204})});
  page.on('request',request=>{if(request.url().includes('contact-pow'))workerRequests++;});
  const salt='browser-contract?expires=2000000000&';const challenge=createHash('sha256').update(salt+'3').digest('hex');
  await page.route('**/api/contact/challenge',async route=>{challenges++;await route.fulfill({json:{algorithm:'SHA-256',challenge,salt,signature:'fixture',maxnumber:100}})});
  await page.route('**/api/contact',async route=>{submitted=JSON.parse(route.request().postData()!);await route.fulfill({json:{status:'sent'}})});
  await page.goto('/contact/');expect(challenges).toBe(0);expect(workerRequests).toBe(0);
+ await page.getByText('Analytics preferences',{exact:true}).click();await page.getByRole('button',{name:'Session only',exact:true}).click();await page.getByLabel('About',{exact:true}).selectOption('mentorship');
  await page.getByLabel('Name',{exact:true}).fill('Browser test');await page.getByLabel('Email',{exact:true}).fill('fixture@example.test');await page.getByLabel('Message',{exact:true}).fill('A temporary browser verification fixture.');
  await page.getByRole('button',{name:'Verify and send'}).click();await expect(page.locator('#contact-status')).toContainText('Your message was sent');
+ await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+ await expect.poll(()=>batches.flatMap(b=>b.events).filter(e=>e.type==='contact_submitted').length).toBe(1);
+ expect(batches.flatMap(b=>b.events).find(e=>e.type==='contact_submitted').properties).toEqual({category:'mentorship'});
+ expect(JSON.stringify(batches)).not.toContain('fixture@example.test');expect(JSON.stringify(batches)).not.toContain('temporary browser verification');
  expect(challenges).toBe(1);expect(workerRequests).toBeGreaterThan(0);expect(submitted.submission_id).toMatch(/^[a-f0-9]{32}$/);
  const proof=JSON.parse(Buffer.from(submitted.altcha,'base64').toString());expect(proof.number).toBe(3);expect(createHash('sha256').update(proof.salt+proof.number).digest('hex')).toBe(proof.challenge);
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);

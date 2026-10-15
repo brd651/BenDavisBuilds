@@ -29,7 +29,7 @@ if(form){
    const result=await sent.json() as {status?:string};
    if(result.status!=='sent')throw Error('Your message was not confirmed. Please try again later.');
    form.reset();submissionID=crypto.randomUUID().replaceAll('-','');status.textContent='Your message was sent. Thank you.';
-   document.dispatchEvent(new CustomEvent('bdb:contact-sent'));
+   document.dispatchEvent(new CustomEvent('bdb:contact-sent',{detail:{category:fields.get('category')}}));
   }catch(error){status.textContent=error instanceof Error?error.message:'Delivery is unavailable. Please try again later.';}
   finally{clearTimeout(timer);worker?.terminate();busy=false;button.disabled=false;form.removeAttribute('aria-busy');}
  });

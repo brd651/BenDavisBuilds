@@ -79,7 +79,10 @@ if (root) {
       if(provider[url.hostname])emit('booking_intent',{provider:provider[url.hostname]});
     }
   });
-  document.addEventListener('bdb:contact-sent',()=>emit('contact_submitted',{category:'general'}));
+  document.addEventListener('bdb:contact-sent',event=>{
+    const category=(event as CustomEvent<{category?:unknown}>).detail?.category;
+    if(typeof category==='string'&&['general','leadership','project','mentorship'].includes(category))emit('contact_submitted',{category});
+  });
   window.addEventListener('scroll',()=>{
     if(!active)return;const range=document.documentElement.scrollHeight-innerHeight;
     if(range<=0)return;const percent=scrollY/range*100;

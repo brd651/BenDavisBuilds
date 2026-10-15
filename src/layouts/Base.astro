@@ -1,6 +1,5 @@
 ---
 import '../styles/site.css';
-import AnalyticsPreferences from '../components/backend/AnalyticsPreferences.astro';
 import BrandMark from '../components/BrandMark.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
@@ -63,7 +62,7 @@ const articleMetadata = Astro.props.articleMetadata;
   </head>
   <body class:list={[{ homepage: homepageHero }]}>
     <a class="skip-link" href="#main">Skip to content</a>
-    <div class="development-notice"><span class="notice-label">Development preview</span><span>{sampleContent ? 'Sample content · design in progress' : 'Sample content elsewhere · design in progress'}</span></div>
+    {!homepageHero && <div class="development-notice"><span class="notice-label">Development preview</span><span>{sampleContent ? 'Sample content · design in progress' : 'Sample content elsewhere · design in progress'}</span></div>}
     <header class:list={["site-header", "shell", { "homepage-header": homepageHero }]}>
       <a class="wordmark" href="/"><BrandMark /><span class="wordmark-type"><strong>Ben Davis</strong><small>BEN DAVIS BUILDS</small></span></a>
       <SiteNavigation />
@@ -72,8 +71,7 @@ const articleMetadata = Astro.props.articleMetadata;
     </header>
     {homepageHero && <HeroViewport />}
     <main id="main" class:list={["shell", { "homepage-main": homepageHero }]} tabindex="-1"><slot /></main>
-    <SiteFooter sampleContent={sampleContent} />
-    <AnalyticsPreferences />
+    <SiteFooter />
     <script>
       const control = document.querySelector<HTMLDetailsElement>('.theme-control');
       const trigger = control?.querySelector<HTMLElement>('summary');

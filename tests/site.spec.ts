@@ -16,7 +16,8 @@ for (const width of [390, 768, 1440]) {
         expect(response?.status(), route).toBe(200);
         await expect(page.locator('h1')).toHaveCount(1);
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-        await expect(page.getByText('Development preview', { exact: true })).toBeVisible();
+        if (route === '/') await expect(page.getByText('Development preview', { exact: true })).toHaveCount(0);
+        else await expect(page.getByText('Development preview', { exact: true })).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
         const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
         expect(result.violations, `${route}: ${JSON.stringify(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })))}`).toEqual([]);

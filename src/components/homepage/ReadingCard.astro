@@ -1,0 +1,31 @@
+---
+import { Image } from 'astro:assets';
+import { purchaseLink, type HomepageContent } from '../../lib/homepage-content';
+interface Props { reading: HomepageContent['reading'] }
+const { reading } = Astro.props;
+const book = reading.books.find(entry => entry.id === reading.currentBookId);
+const purchase = book && purchaseLink(book, reading.amazonAssociateTag);
+---
+<aside class="reading-card" aria-labelledby="reading-heading">
+  <p class="eyebrow">Currently reading</p>
+  {book ? <>
+    {book.cover && <Image class="book-cover" src={book.cover.image} alt={book.cover.alt} widths={[160, 320]} sizes="160px" width={160} loading="lazy" format="webp" />}
+    <h3 id="reading-heading">{book.title}</h3>
+    <p class="book-author">By {book.author}</p>
+    {book.takeaway && <p>{book.takeaway}</p>}
+    {purchase && <a href={purchase.href} target="_blank" rel={purchase.rel}>Find the book <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>}
+    {purchase?.affiliate && <p class="affiliate-disclosure">As an Amazon Associate I earn from qualifying purchases.</p>}
+  </> : <>
+    <h3 id="reading-heading">Reading list in progress.</h3>
+    <p>A short, considered list of books to return to and share with mentees. I’ll add the titles here when it’s ready.</p>
+  </>}
+</aside>
+<style>
+  .reading-card { border-top: 2px solid var(--bs-brass); padding-top: 1.5rem; }
+  p { color: var(--bs-muted); }
+  .eyebrow { margin-bottom: .85rem; }
+  h3 { font-size: 1.5rem; line-height: 1.25; }
+  .book-author { margin-top: -.5rem; font-size: .875rem; }
+  .book-cover { float: right; max-width: 35%; height: auto; margin: 0 0 1rem 1.5rem; }
+  .affiliate-disclosure { clear: both; font-size: .8125rem; margin-top: 1rem; }
+</style>

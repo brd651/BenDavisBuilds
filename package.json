@@ -20,7 +20,7 @@
     "validate:budget": "node scripts/check-js-budget.mjs",
     "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test",
     "assets:identity": "node scripts/generate-identity.mjs",
-    "test:unit": "node --test tests/publishing-unit.ts",
+    "test:unit": "node --test tests/publishing-unit.ts tests/homepage-unit.ts",
     "test:content": "node scripts/test-publishing.mjs"
   },
   "dependencies": {

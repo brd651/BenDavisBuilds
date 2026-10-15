@@ -17,7 +17,8 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     await footer.scrollIntoViewIfNeeded();
     await expect(footer).toHaveCount(1);
     await expect(footer.getByText('Ben Davis Builds', { exact: true })).toBeVisible();
-    await expect(footer.getByText('Technical leadership, cybersecurity, and hands-on engineering.', { exact: true })).toBeVisible();
+    await expect(footer.locator('.footer-description, .fine-print')).toHaveCount(0);
+    await expect(footer.locator('#privacy-notice summary')).toHaveText('Privacy');
     await expect(footer.locator('.footer-copyright')).toHaveText(`© ${new Date().getUTCFullYear()} Ben Davis Builds`);
     const social = footer.getByRole('navigation', { name: 'Social profiles' });
     expect(await social.locator('a').evaluateAll(elements => elements.map(el => el.getAttribute('href')))).toEqual(destinations);
@@ -30,7 +31,8 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
       expect(box?.width).toBeGreaterThanOrEqual(44);
       expect(box?.height).toBeGreaterThanOrEqual(44);
     }
-    expect(await footer.getByRole('navigation', { name: 'Footer navigation' }).locator('a').evaluateAll(elements => elements.map(el => el.getAttribute('href')))).toEqual(['/writing/archive/', '/lab/', '/contact/']);
+    await expect(footer.getByRole('navigation', { name: 'Footer navigation' })).toHaveCount(0);
+    await expect(footer.getByRole('link', { name: 'Contact', exact: true })).toHaveAttribute('href', '/contact/');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const bounds = await footer.boundingBox();
     expect(bounds?.width).toBeLessThanOrEqual(1200);
@@ -47,7 +49,7 @@ test('one shared footer appears across all static routes and the real 404', asyn
     await expect(footer).toHaveCount(1);
     expect(await footer.getByRole('navigation', { name: 'Social profiles' }).locator('a').evaluateAll(elements => elements.map(el => el.getAttribute('href')))).toEqual(destinations);
     await expect(footer.getByRole('link', { name: /Privacy/i })).toHaveCount(0);
-    await expect(footer.locator('a[href="#"], iframe, script')).toHaveCount(0);
+    await expect(footer.locator('a[href="#"], iframe, script[src^="http"]')).toHaveCount(0);
   }
 });
 

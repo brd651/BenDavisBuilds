@@ -1,0 +1,42 @@
+---
+import { homepageContent } from '../../data/homepage';
+import { socialProfiles } from '../../data/site';
+interface Props { content?: typeof homepageContent }
+const { content = homepageContent } = Astro.props;
+const progress = content.labProgress;
+const labels = { 'current-focus': 'Current focus', 'verified-milestone': 'Verified milestone', 'next-step': 'Next step' };
+const profiles = socialProfiles.filter(profile => profile.platform === 'linkedin' || profile.platform === 'x');
+---
+<div class:list={['motion-grid', { 'without-progress': !progress }]}>
+  {progress && <article class="lab-progress">
+    <p class="eyebrow">Homelab / {labels[progress.kind]}</p>
+    <h3>{progress.title}</h3>
+    <p>{progress.description}</p>
+    {progress.reviewedAt && <p class="reviewed">Last reviewed <time datetime={progress.reviewedAt}>{new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${progress.reviewedAt}T00:00:00Z`))}</time></p>}
+    <a href="/projects/">Explore the project direction <span aria-hidden="true">→</span></a>
+  </article>}
+  <div class="social-notes" aria-label="Selected social activity">
+    {profiles.map(profile => {
+      const post = content.socialPosts.find(post => post.platform === profile.platform);
+      return <article class="social-note">
+        <p class="eyebrow">{profile.label}{post ? ' / Selected post' : ''}</p>
+        {post ? <><p class="post-excerpt">{post.excerpt}</p><a href={post.url} target="_blank" rel="noopener noreferrer">Read the {profile.label} post <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a></> : <a href={profile.href} target="_blank" rel="noopener noreferrer">{profile.platform === 'linkedin' ? 'Connect with me on LinkedIn' : 'Find me on X'} <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>}
+      </article>;
+    })}
+  </div>
+</div>
+<style>
+  .motion-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: clamp(2rem, 5vw, 5rem); }
+  .lab-progress { border-left: 2px solid var(--bs-brass); padding-left: clamp(1.25rem, 3vw, 2rem); }
+  h3 { max-width: 26ch; font-size: clamp(1.5rem, 2.3vw, 2rem); line-height: 1.2; }
+  p:not(.eyebrow) { max-width: 58ch; color: var(--bs-muted); }
+  .eyebrow { margin-bottom: .85rem; }
+  .reviewed { font-size: .8125rem; }
+  .social-note { border-top: 1px solid var(--bs-line); padding-block: 1.1rem; }
+  .social-note:first-child { padding-top: 0; border-top: 0; }
+  .social-note:last-child { padding-bottom: 0; }
+  .social-note a { font-size: .9375rem; }
+  .post-excerpt { font-size: .9375rem; }
+  .without-progress { grid-template-columns: 1fr; }
+  @media (max-width: 700px) { .motion-grid { grid-template-columns: 1fr; } }
+</style>

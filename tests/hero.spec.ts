@@ -3,18 +3,12 @@ import { test, expect } from '@playwright/test';
 
 declare global { interface Window { heroLayoutShift: number } }
 
-test('hero copy, actions and focus labels stay selectable HTML', async ({ page, request }) => {
+test('hero copy, actions and focus labels stay selectable HTML', async ({ page }) => {
   await page.goto('/');
   const hero = page.getByRole('region', { name: 'Systems for a more interesting tomorrow.' });
   await expect(hero.getByRole('heading', { level: 1 })).toHaveText('Systems for a more interesting tomorrow.');
-  await expect(hero.getByText('Technical leadership, practical systems, and real-world progress.')).toBeVisible();
-  for (const [name, href] of [['Explore Writing', '/writing/'], ['View Projects', '/projects/']]) {
-    const link = hero.getByRole('link', { name });
-    await expect(link).toHaveAttribute('href', href);
-    await link.focus();
-    expect(await link.evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
-    expect((await request.get(href)).status()).toBe(200);
-  }
+  await expect(hero.getByText('Leading teams, building things, and sharing what I learn.')).toBeVisible();
+  await expect(hero.getByRole('link')).toHaveCount(0);
   await expect(hero.getByLabel('Built Signal focus')).toContainText('PeopleSystemsExecutionImpact');
   // The design reference must never be published or loaded as scenery.
   expect(await page.locator('img').evaluateAll(images => images.some(img => img instanceof HTMLImageElement && img.currentSrc.includes('hero-reference.png')))).toBe(false);
@@ -199,7 +193,7 @@ test('enlarged desktop text remains reachable without horizontal overflow', asyn
   for (const theme of ['dark', 'light']) {
     await chooseTheme(page, theme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    for (const name of ['Explore Writing', 'View Projects']) {
+    for (const name of ['Help people own the next decision.', 'Write down what the work teaches you.']) {
       const button = page.getByRole('link', { name, exact: false }).first();
       await button.scrollIntoViewIfNeeded();
       await expect(button).toBeInViewport();
@@ -217,7 +211,7 @@ test('tablet-to-desktop sizing follows chrome reflow without an extra height jum
       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       stages.push(await page.evaluate(() => ({
         hero: document.querySelector('.built-hero')!.getBoundingClientRect().height,
-        chrome: document.querySelector('.development-notice')!.getBoundingClientRect().height + document.querySelector('.site-header')!.getBoundingClientRect().height,
+        chrome: document.querySelector('.site-header')!.getBoundingClientRect().height,
       })));
     }
     for (let index = 1; index < stages.length; index++) {
@@ -331,10 +325,10 @@ for (const [width, height, density] of polishViewports) {
   });
 }
 
-test('stage sizing follows actual banner growth rather than a fixed header allowance', async ({ page }) => {
+test('stage sizing follows actual header growth rather than a fixed header allowance', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
-  await page.locator('.development-notice').evaluate(el => { (el as HTMLElement).style.paddingBlock = '2rem'; });
+  await page.locator('.homepage-header').evaluate(el => { (el as HTMLElement).style.paddingBlock = '2rem'; });
   await expect.poll(async () => {
     const hero = await page.locator('.built-hero').boundingBox();
     return 1080 - hero!.y - hero!.height;

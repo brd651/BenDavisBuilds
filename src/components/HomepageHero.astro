@@ -30,8 +30,7 @@ const [avif, webp] = await Promise.all([
     <div class="hero-foreground">
       <h1 id="hero-heading">Systems for a more interesting tomorrow.</h1>
       <span class="hero-signature" aria-hidden="true"></span>
-      <p class="hero-support">Technical leadership, practical systems, and real-world progress.</p>
-      <div class="button-row"><a class="button primary" href="/writing/">Explore Writing <span aria-hidden="true">→</span></a><a class="button" href="/projects/">View Projects</a></div>
+      <p class="hero-support">Leading teams, building things, and sharing what I learn.</p>
     </div>
     <div class="hero-hud"><svg class="hero-hud-frame" viewBox="0 0 190 240" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M24 1H12L1 12V52M1 186V228L12 239H30M166 1H178L189 12V52M189 188V228L178 239H158M1 112V127M189 112V127"/></svg><ul aria-label="Built Signal themes"><li>Build</li><li>Secure</li><li>Optimize</li><li>Explore</li></ul></div>
     <div class="hero-bottom"><ul class="hero-pillars" aria-label="Built Signal focus"><li>People</li><li>Systems</li><li>Execution</li><li>Impact</li></ul></div>
@@ -50,9 +49,6 @@ const [avif, webp] = await Promise.all([
   h1 { max-width: 23ch; font-size: clamp(1.65rem,2.45vw,2.5rem); line-height: 1.7; text-transform: uppercase; letter-spacing: .2em; font-weight: 500; margin-bottom: 1.7rem; text-wrap: balance; }
   .hero-signature { display: block; width: 3rem; height: 3px; background: var(--bs-scarlet); margin-bottom: 1.6rem; }
   .hero-support { max-width: 36ch; font-size: clamp(1.125rem,1.7vw,1.55rem); line-height: 1.65; color: var(--bs-text); }
-  .button-row { margin-top: 2.4rem; gap: 1rem; }
-  .button { min-height: 52px; padding: .85rem 1.5rem; font-size: 1rem; background: var(--bs-page); }
-  .button.primary { background: var(--bs-action); }
   .hero-hud { position: relative; isolation: isolate; margin: -2rem 0 0; list-style: none; width: 165px; padding: 1.5rem .7rem; align-self: start; justify-self: end; display: grid; gap: 1.1rem; border: 0; text-align: center; text-transform: uppercase; letter-spacing: .18em; text-indent: .18em; line-height: 1.4; font-size: .875rem; color: var(--hero-ivory); }
   .hero-hud::before { content: ''; position: absolute; inset: -.4rem -.6rem; z-index: -1; background: radial-gradient(ellipse,color-mix(in srgb,var(--hero-navy) 76%,transparent) 15%,color-mix(in srgb,var(--hero-navy) 60%,transparent) 65%,transparent 100%); }
   .hero-hud ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }

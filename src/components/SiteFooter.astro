@@ -1,58 +1,44 @@
 ---
 import BrandMark from './BrandMark.astro';
 import SocialIcon from './SocialIcon.astro';
+import AnalyticsPreferences from './backend/AnalyticsPreferences.astro';
 import { siteIdentity, socialProfiles } from '../data/site';
-interface Props { sampleContent?: boolean }
-const { sampleContent = true } = Astro.props;
-// Static Astro output uses the build year; each subsequent build updates it.
 const year = new Date().getUTCFullYear();
+const analyticsEnabled = import.meta.env.PUBLIC_GO_SERVICES_ENABLED === 'true';
 ---
 <footer class="site-footer shell">
-  <div class="footer-introduction">
+  <div class="footer-primary">
     <div class="footer-identity"><BrandMark class="footer-brand-mark" /><strong>{siteIdentity.name}</strong></div>
-    <p class="footer-description">{siteIdentity.description}</p>
-  </div>
-  <div class="footer-links">
-    <nav class="footer-navigation" aria-label="Footer navigation">
-      <a href="/writing/archive/">Archive</a><a href="/lab/">Simulated lab</a><a href="/contact/">Contact</a>
-    </nav>
-    <nav class="footer-socials" aria-label="Social profiles">
-      <ul>{socialProfiles.map(profile => <li>
-        <a class="social-profile" href={profile.href} target="_blank" rel="noopener noreferrer" aria-label={`Ben Davis on ${profile.label} (opens in a new tab)`} title={`${profile.label} (opens in a new tab)`}>
-          <SocialIcon platform={profile.platform} />
-        </a>
-      </li>)}</ul>
-    </nav>
+    <div class="footer-links">
+      <nav class="footer-socials" aria-label="Social profiles"><ul>{socialProfiles.map(profile => <li><a class="social-profile" href={profile.href} target="_blank" rel="noopener noreferrer" aria-label={`Ben Davis on ${profile.label} (opens in a new tab)`} title={`${profile.label} (opens in a new tab)`}><SocialIcon platform={profile.platform} /></a></li>)}</ul></nav>
+      <a class="footer-contact" href="/contact/">Contact</a>
+    </div>
   </div>
   <div class="footer-meta">
     <p class="footer-copyright">© {year} {siteIdentity.name}</p>
-    <p class="fine-print">{sampleContent ? 'Provisional BD identity · all prose and projects are samples.' : 'Provisional BD identity · other pages contain sample content.'}</p>
+    <details class="footer-privacy" id="privacy-notice"><summary>Privacy</summary><div class="privacy-copy"><p>Contact details are used to reply to your message. Form messages and email addresses are excluded from analytics.</p><p>{analyticsEnabled ? 'Optional analytics are off by default. You can change your choice in Analytics preferences at any time.' : 'Optional analytics are unavailable in this build. No analytics events are sent.'}</p></div></details>
+    <AnalyticsPreferences embedded />
   </div>
 </footer>
-
 <style>
-  .site-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem 3rem; border-top: 1px solid var(--bs-line); padding-block: 2rem; color: var(--bs-muted); font-size: .875rem; }
-  .footer-identity { display: flex; align-items: center; gap: .65rem; color: var(--bs-text); }
-  .footer-identity strong { font-size: 1.125rem; font-weight: 650; letter-spacing: -.025em; }
-  .footer-identity :global(.footer-brand-mark) { width: 2rem; height: auto; }
-  .footer-description { max-width: 48ch; margin: .6rem 0 0; line-height: 1.7; }
-  .footer-links { display: flex; align-items: center; gap: 1.5rem; }
-  .footer-navigation { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
-  .footer-navigation a { padding-block: .6rem; text-decoration: none; }
-  .footer-navigation a:hover, .footer-navigation a:focus-visible { color: var(--bs-text); text-decoration: underline; }
-  .footer-socials ul { display: flex; gap: .35rem; list-style: none; padding: 0; margin: 0; }
-  .social-profile { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid transparent; border-radius: 4px; color: var(--bs-muted); text-decoration: none; transition: transform .15s ease; }
+  .site-footer { border-top: 1px solid var(--bs-line); padding-block: 1.5rem; color: var(--bs-muted); font-size: .875rem; }
+  .footer-primary, .footer-links, .footer-identity { display: flex; align-items: center; }
+  .footer-primary { justify-content: space-between; flex-wrap: wrap; gap: .75rem 2rem; }
+  .footer-identity { gap: .65rem; color: var(--bs-text); }
+  .footer-identity strong { font-size: 1rem; font-weight: 650; letter-spacing: -.025em; }
+  .footer-identity :global(.footer-brand-mark) { width: 1.75rem; height: auto; }
+  .footer-links { flex-wrap: wrap; gap: 1rem; }
+  .footer-socials ul { display: flex; gap: .3rem; list-style: none; padding: 0; margin: 0; }
+  .social-profile { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid transparent; border-radius: 4px; color: var(--bs-muted); text-decoration: none; }
   .social-profile:hover, .social-profile:focus-visible { background: var(--bs-surface); color: var(--bs-accentText); border-color: var(--bs-border); }
-  .social-profile:hover { transform: translateY(-1px); }
   .social-profile :global(svg) { display: block; width: 21px; height: 21px; }
-  .footer-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; font-size: .75rem; line-height: 1.7; }
-  .footer-meta p { margin: 0; }
-  @media (max-width: 1000px) { .footer-links { flex-direction: column; align-items: flex-end; gap: .5rem; } }
-  @media (max-width: 700px) {
-    .site-footer { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
-    .footer-links { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; }
-    .footer-meta { flex-direction: column; gap: .35rem; }
-  }
-  @media (prefers-reduced-motion: reduce) { .social-profile { transition: none; } }
+  .footer-contact { display: inline-flex; align-items: center; min-height: 44px; padding-inline: .5rem; }
+  .footer-meta { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: start; gap: .5rem 1.5rem; padding-top: .5rem; }
+  .footer-copyright { margin: 0; padding-block: .5rem; min-height: 44px; font-size: .8125rem; }
+  summary { cursor: pointer; min-height: 44px; padding-block: .5rem; width: fit-content; }
+  .privacy-copy { max-width: 75ch; padding-block: .75rem; }
+  .privacy-copy p:last-child { margin-bottom: 0; }
+  .footer-privacy[open], .footer-meta :global(.analytics-preferences[open]) { grid-column: 1 / -1; }
+  @media (max-width: 700px) { .footer-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; } .footer-copyright { grid-column: 1/-1; padding-bottom: 0; min-height: 0; } }
   @media (forced-colors: active) { .social-profile:hover, .social-profile:focus-visible { border-color: CanvasText; } }
 </style>

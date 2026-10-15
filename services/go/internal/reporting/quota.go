@@ -25,6 +25,12 @@ func (b *Budget) Init(ctx context.Context) error {
 	CREATE TABLE IF NOT EXISTS sheets_export_state (
 		key TEXT PRIMARY KEY, value TEXT NOT NULL
 	);`)
+	if err != nil {
+		return err
+	}
+	// Migrate legacy second-resolution reservations conservatively to nanoseconds.
+	_, err = b.DB.ExecContext(ctx, `UPDATE sheets_request_usage SET reserved_at=reserved_at*1000000000+999999999 WHERE reserved_at<100000000000000;
+      UPDATE sheets_export_state SET value=CAST(value AS INTEGER)*1000000000+999999999 WHERE key='last_scheduled' AND CAST(value AS INTEGER)>0 AND CAST(value AS INTEGER)<100000000000000;`)
 	return err
 }
 
@@ -59,10 +65,10 @@ func (b *Budget) Acquire(ctx context.Context, scheduled bool) (func(), error) {
 		if queryErr != nil && queryErr != sql.ErrNoRows {
 			return nil, queryErr
 		}
-		if last > 0 && now.Unix()-last < 3600 {
+		if last > 0 && now.UnixNano()-last < int64(time.Hour) {
 			return nil, ErrDeferred
 		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO sheets_export_state(key,value) VALUES('last_scheduled',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, fmt.Sprint(now.Unix())); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO sheets_export_state(key,value) VALUES('last_scheduled',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, fmt.Sprint(now.UnixNano())); err != nil {
 			return nil, err
 		}
 	}
@@ -84,7 +90,7 @@ func (b *Budget) Reserve(ctx context.Context) error {
 	}
 	defer tx.Rollback()
 	var minute, daily int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM sheets_request_usage WHERE reserved_at>?`, now.Add(-60*time.Second).Unix()).Scan(&minute); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM sheets_request_usage WHERE reserved_at>?`, now.Add(-60*time.Second).UnixNano()).Scan(&minute); err != nil {
 		return err
 	}
 	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM sheets_request_usage WHERE utc_day=?`, day).Scan(&daily); err != nil {
@@ -93,7 +99,7 @@ func (b *Budget) Reserve(ctx context.Context) error {
 	if minute >= 10 || daily >= 120 {
 		return ErrDeferred
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO sheets_request_usage(reserved_at,utc_day) VALUES(?,?)`, now.Unix(), day); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO sheets_request_usage(reserved_at,utc_day) VALUES(?,?)`, now.UnixNano(), day); err != nil {
 		return err
 	}
 	return tx.Commit()

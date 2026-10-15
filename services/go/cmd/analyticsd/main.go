@@ -21,6 +21,7 @@ import (
 )
 
 func main() {
+	platform.Logging()
 	dbPath := platform.Env("BDB_ANALYTICS_DB", "/var/lib/bdb-analytics/analytics.sqlite")
 	db, err := storage.Open(dbPath)
 	if err != nil {

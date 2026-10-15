@@ -1,0 +1,46 @@
+---
+- name: Roll back compiled Go code without overwriting persistent databases
+  hosts: website
+  become: true
+  gather_facts: false
+  vars:
+    go_service_root: /srv/bendavisbuilds-services
+  tasks:
+    - name: Require an explicit retained release
+      ansible.builtin.assert:
+        that: go_rollback_release is match('^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$')
+    - name: Verify the older binary accepts the current database before switching
+      ansible.builtin.command:
+        argv: ['{{ go_service_root }}/releases/{{ go_rollback_release }}/analyticsd', integrity]
+      become_user: bdb-analytics
+      environment:
+        BDB_ANALYTICS_DB: /var/lib/bdb-analytics/analytics.sqlite
+      changed_when: false
+    - name: Acquire deployment lock
+      ansible.builtin.command: mkdir /srv/bendavisbuilds/.deploy-lock
+      changed_when: true
+    - name: Activate retained compiled code
+      block:
+        - name: Stage retained service release
+          ansible.builtin.file:
+            src: '{{ go_service_root }}/releases/{{ go_rollback_release }}'
+            dest: '{{ go_service_root }}/current.rollback'
+            state: link
+        - name: Switch pointer atomically
+          ansible.builtin.command: 'mv -Tf {{ go_service_root }}/current.rollback {{ go_service_root }}/current'
+          changed_when: true
+        - name: Restart loopback services
+          ansible.builtin.systemd_service:
+            name: 'bdb-{{ item }}.service'
+            state: restarted
+          loop: [analytics,contact]
+        - name: Verify health
+          ansible.builtin.uri:
+            url: 'http://127.0.0.1:{{ item }}/healthz'
+            status_code: [200,204]
+          loop: [8091,8092]
+      always:
+        - name: Release deployment lock
+          ansible.builtin.file:
+            path: /srv/bendavisbuilds/.deploy-lock
+            state: absent

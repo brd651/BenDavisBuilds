@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brd651/BenDavisBuilds/services/go/internal/platform"
 	"github.com/brd651/BenDavisBuilds/services/go/internal/reporting"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -19,6 +20,7 @@ import (
 )
 
 func main() {
+	platform.Logging()
 	manual := flag.Bool("manual", false, "run without the scheduled hourly gate")
 	report := flag.Bool("report", false, "print aggregate report JSON locally without contacting Google")
 	flag.Parse()
@@ -31,6 +33,7 @@ func main() {
 		fatal("open analytics database", err)
 	}
 	defer db.Close()
+	db.SetMaxOpenConns(1)
 	if _, err = db.Exec(`PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;`); err != nil {
 		fatal("configure SQLite", err)
 	}

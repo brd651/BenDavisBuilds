@@ -326,3 +326,37 @@ func TestDailyCapAt120(t *testing.T) {
 		t.Fatalf("daily 121 request accepted: %v", e)
 	}
 }
+
+func TestFractionalSecondBudgetsCannotResetEarly(t *testing.T) {
+	db := testDB(t)
+	ctx := context.Background()
+	now := time.Unix(1700000000, 900000000)
+	b := &Budget{DB: db, Now: func() time.Time { return now }}
+	if err := b.Init(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 10; i++ {
+		if err := b.Reserve(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	release, err := b.Acquire(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+	now = now.Add(59*time.Second + 200*time.Millisecond)
+	if err = b.Reserve(ctx); err != ErrDeferred {
+		t.Fatalf("rolling window rounded early: %v", err)
+	}
+	now = now.Add(3540 * time.Second)
+	if _, err = b.Acquire(ctx, true); err != ErrDeferred {
+		t.Fatalf("hourly window rounded early: %v", err)
+	}
+	now = now.Add(time.Second)
+	release, err = b.Acquire(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+}

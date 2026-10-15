@@ -1,0 +1,345 @@
+---
+- name: Deploy isolated Go services on the existing website host
+  hosts: website
+  become: true
+  gather_facts: true
+  vars:
+    go_service_root: /srv/bendavisbuilds-services
+    go_services_enabled: true
+    go_services:
+      - {name: analytics, user: bdb-analytics, group: bdb-reporting, binary: analyticsd, state: /var/lib/bdb-analytics, umask: '0007', inaccessible: '/etc/bdb/contact /etc/bdb/sheets /var/lib/bdb-contact'}
+      - {name: contact, user: bdb-contact, group: bdb-contact, binary: contactd, state: /var/lib/bdb-contact, umask: '0077', inaccessible: '/etc/bdb/analytics /etc/bdb/sheets /var/lib/bdb-analytics'}
+      - {name: sheets, user: bdb-sheets, group: bdb-reporting, binary: sheetsexport, state: /var/lib/bdb-analytics, umask: '0007', inaccessible: '/etc/bdb/analytics /etc/bdb/contact /var/lib/bdb-contact', oneshot: true}
+      - {name: maintenance, user: bdb-analytics, group: bdb-reporting, binary: maintenance.sh, state: /var/lib/bdb-analytics, umask: '0007', inaccessible: '/etc/bdb/contact /etc/bdb/sheets /var/lib/bdb-contact', oneshot: true}
+    go_unit_names: [bdb-analytics.service,bdb-contact.service,bdb-sheets.service,bdb-maintenance.service,bdb-sheets.timer,bdb-maintenance.timer]
+  pre_tasks:
+    - name: Require verified private inputs and a reviewed compiled release
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Ubuntu'
+          - go_release is match('^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$')
+          - go_artifact_dir is defined
+          - go_sheets_credential is defined
+          - go_spreadsheet_id is match('^[A-Za-z0-9_-]+$')
+          - go_analytics_secret is defined
+          - go_contact_secret is defined
+          - site_domain is match('^[A-Za-z0-9.-]+$')
+          - local_docs_dir is not match('^' + (playbook_dir | dirname) + '(/|$)')
+    - name: Verify expected compiled files locally
+      ansible.builtin.stat:
+        path: '{{ go_artifact_dir }}/{{ item }}'
+      loop: [analyticsd, contactd, sheetsexport, maintenance.sh, routes.json]
+      delegate_to: localhost
+      become: false
+      register: artifacts
+    - name: Require all compiled files
+      ansible.builtin.assert:
+        that: item.stat.isreg | default(false)
+      loop: '{{ artifacts.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Create private local operational backup directory
+      ansible.builtin.file:
+        path: '{{ local_docs_dir }}/go-services/backups'
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+    - name: Preserve the existing Caddy configuration locally
+      ansible.builtin.fetch:
+        src: /etc/caddy/Caddyfile
+        dest: '{{ local_docs_dir }}/go-services/backups/Caddyfile-{{ ansible_date_time.iso8601_basic_short }}'
+        flat: true
+    - name: Inspect existing service definitions
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/{{ item }}'
+      loop: [bdb-analytics.service, bdb-contact.service, bdb-sheets.service, bdb-maintenance.service, bdb-sheets.timer, bdb-maintenance.timer]
+      register: old_units
+    - name: Preserve existing service definitions locally
+      ansible.builtin.fetch:
+        src: '{{ item.stat.path }}'
+        dest: '{{ local_docs_dir }}/go-services/backups/{{ item.item }}-{{ ansible_date_time.iso8601_basic_short }}'
+        flat: true
+      when: item.stat.exists
+      loop: '{{ old_units.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Remember active and enabled state of pre-existing service definitions
+      ansible.builtin.command:
+        argv: [systemctl, show, '{{ item }}', '--property=ActiveState', '--property=UnitFileState']
+      loop: '{{ old_units.results | selectattr("stat.exists") | map(attribute="item") | list }}'
+      register: previous_unit_state
+      changed_when: false
+    - name: Read current Caddy configuration before any server changes
+      ansible.builtin.command: /usr/bin/caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile
+      register: before_caddy
+      changed_when: false
+      no_log: true
+    - name: Refuse to overwrite unreviewed Caddy changes
+      ansible.builtin.assert:
+        that: (before_caddy.stdout | from_json) == (lookup('file', go_expected_caddy_json) | from_json)
+        fail_msg: Current Caddy differs from the inspected baseline. Reconcile it before deploying.
+  tasks:
+    - name: Acquire deployment lock (an existing lock requires investigation)
+      ansible.builtin.command: 'mkdir /srv/bendavisbuilds/.deploy-lock'
+      changed_when: true
+    - name: Install reviewed Go release
+      block:
+        - name: Pause pre-existing timers during activation
+          ansible.builtin.systemd_service:
+            name: '{{ item }}'
+            state: stopped
+          loop: '{{ old_units.results | selectattr("stat.exists") | map(attribute="item") | select("search", "\.timer$") | list }}'
+        - name: Create service and reporting groups
+          ansible.builtin.group:
+            name: '{{ item }}'
+            system: true
+          loop: [bdb-reporting,bdb-analytics,bdb-contact,bdb-sheets]
+        - name: Create separate service identities
+          ansible.builtin.user:
+            name: '{{ item }}'
+            group: '{{ item }}'
+            system: true
+            create_home: false
+            shell: /usr/sbin/nologin
+          loop: [bdb-analytics, bdb-contact, bdb-sheets]
+        - name: Allow only analytics and exporter to share the analytics database
+          ansible.builtin.user:
+            name: '{{ item }}'
+            groups: bdb-reporting
+            append: true
+          loop: [bdb-analytics, bdb-sheets]
+        - name: Create persistent state outside release paths and public root
+          ansible.builtin.file:
+            path: '{{ item.path }}'
+            state: directory
+            owner: '{{ item.owner }}'
+            group: '{{ item.group }}'
+            mode: '{{ item.mode }}'
+          loop:
+            - {path: /var/lib/bdb-analytics, owner: bdb-analytics, group: bdb-reporting, mode: '2770'}
+            - {path: /var/lib/bdb-contact, owner: bdb-contact, group: bdb-contact, mode: '0700'}
+            - {path: /etc/bdb, owner: root, group: root, mode: '0755'}
+            - {path: /etc/bdb/analytics, owner: bdb-analytics, group: bdb-analytics, mode: '0700'}
+            - {path: /etc/bdb/contact, owner: bdb-contact, group: bdb-contact, mode: '0700'}
+            - {path: /etc/bdb/sheets, owner: bdb-sheets, group: bdb-sheets, mode: '0700'}
+            - {path: /etc/bdb/maintenance, owner: bdb-analytics, group: bdb-analytics, mode: '0700'}
+            - {path: '{{ go_service_root }}', owner: root, group: root, mode: '0755'}
+            - {path: '{{ go_service_root }}/releases', owner: root, group: root, mode: '0755'}
+        - name: Install private credentials only for their respective service identities
+          ansible.builtin.copy:
+            src: '{{ item.src }}'
+            dest: '{{ item.dest }}'
+            owner: '{{ item.owner }}'
+            group: '{{ item.owner }}'
+            mode: '0600'
+          loop:
+            - {src: '{{ go_analytics_secret }}', dest: /etc/bdb/analytics/collector.key, owner: bdb-analytics}
+            - {src: '{{ go_contact_secret }}', dest: /etc/bdb/contact/contact.key, owner: bdb-contact}
+            - {src: '{{ go_sheets_credential }}', dest: /etc/bdb/sheets/service-account.json, owner: bdb-sheets}
+          no_log: true
+        - name: Install separately authorized mail configuration when supplied
+          ansible.builtin.copy:
+            src: '{{ go_mail_config }}'
+            dest: /etc/bdb/contact/mail.json
+            owner: bdb-contact
+            group: bdb-contact
+            mode: '0600'
+          when: go_mail_config | default('') | length > 0
+          no_log: true
+        - name: Create immutable service release directory
+          ansible.builtin.file:
+            path: '{{ go_service_root }}/releases/{{ go_release }}'
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+        - name: Install locally compiled release files
+          ansible.builtin.copy:
+            src: '{{ go_artifact_dir }}/{{ item }}'
+            dest: '{{ go_service_root }}/releases/{{ go_release }}/{{ item }}'
+            owner: root
+            group: root
+            mode: '0755'
+          loop: [analyticsd, contactd, sheetsexport, maintenance.sh, routes.json]
+        - name: Install private environment files
+          ansible.builtin.template:
+            src: 'templates/go-services/{{ item.name if item.name != "maintenance" else "analytics" }}.env.j2'
+            dest: '/etc/bdb/{{ item.name }}/service.env'
+            owner: '{{ item.user }}'
+            group: '{{ item.user }}'
+            mode: '0600'
+          loop: '{{ go_services }}'
+          no_log: true
+        - name: Back up existing analytics database before service activation
+          ansible.builtin.stat:
+            path: /var/lib/bdb-analytics/analytics.sqlite
+          register: existing_db
+        - name: Seed first installation with the controlled export checkpoint database
+          ansible.builtin.copy:
+            src: '{{ go_initial_db }}'
+            dest: /var/lib/bdb-analytics/analytics.sqlite
+            owner: bdb-analytics
+            group: bdb-reporting
+            mode: '0660'
+            force: false
+          when: not existing_db.stat.exists and go_initial_db | default('') | length > 0
+        - name: Inspect existing Contact metadata database
+          ansible.builtin.stat:
+            path: /var/lib/bdb-contact/contact.sqlite
+          register: existing_contact_db
+        - name: Back up Contact metadata consistently before activation
+          ansible.builtin.command:
+            argv:
+              - /usr/bin/python3
+              - -c
+              - "import sqlite3,os; src=sqlite3.connect('file:/var/lib/bdb-contact/contact.sqlite?mode=ro',uri=True); dst=sqlite3.connect('/var/lib/bdb-contact/pre-{{ go_release }}.sqlite'); src.backup(dst); dst.close(); src.close(); os.chmod('/var/lib/bdb-contact/pre-{{ go_release }}.sqlite',0o600)"
+          when: existing_contact_db.stat.exists
+        - name: Preserve Contact metadata snapshot outside Git
+          ansible.builtin.fetch:
+            src: '/var/lib/bdb-contact/pre-{{ go_release }}.sqlite'
+            dest: '{{ local_docs_dir }}/go-services/backups/contact-pre-{{ go_release }}.sqlite'
+            flat: true
+          when: existing_contact_db.stat.exists
+        - name: Take an online database snapshot into private state
+          ansible.builtin.command:
+            argv: ['{{ go_service_root }}/current/analyticsd', backup, '/var/lib/bdb-analytics/pre-{{ go_release }}.sqlite']
+          environment:
+            BDB_ANALYTICS_DB: /var/lib/bdb-analytics/analytics.sqlite
+          become_user: bdb-analytics
+          when: existing_db.stat.exists
+        - name: Fetch snapshot outside Git
+          ansible.builtin.fetch:
+            src: '/var/lib/bdb-analytics/pre-{{ go_release }}.sqlite'
+            dest: '{{ local_docs_dir }}/go-services/backups/analytics-pre-{{ go_release }}.sqlite'
+            flat: true
+          when: existing_db.stat.exists
+        - name: Remember previous service release
+          ansible.builtin.command: 'readlink {{ go_service_root }}/current'
+          register: previous_go_release
+          changed_when: false
+          failed_when: previous_go_release.rc not in [0,1]
+        - name: Stage next release pointer
+          ansible.builtin.file:
+            src: '{{ go_service_root }}/releases/{{ go_release }}'
+            dest: '{{ go_service_root }}/current.next'
+            state: link
+        - name: Switch service release atomically
+          ansible.builtin.command: 'mv -Tf {{ go_service_root }}/current.next {{ go_service_root }}/current'
+          changed_when: true
+        - name: Install bounded hardened service units
+          ansible.builtin.template:
+            src: templates/go-services/service.service.j2
+            dest: '/etc/systemd/system/bdb-{{ item.name }}.service'
+            owner: root
+            group: root
+            mode: '0644'
+          loop: '{{ go_services }}'
+        - name: Install staggered hourly export timer
+          ansible.builtin.template:
+            src: templates/go-services/export.timer.j2
+            dest: /etc/systemd/system/bdb-sheets.timer
+            mode: '0644'
+        - name: Install backup and retention timer
+          ansible.builtin.template:
+            src: templates/go-services/maintenance.timer.j2
+            dest: /etc/systemd/system/bdb-maintenance.timer
+            mode: '0644'
+        - name: Start loopback collectors
+          ansible.builtin.systemd_service:
+            name: 'bdb-{{ item }}.service'
+            state: restarted
+            enabled: true
+            daemon_reload: true
+          loop: [analytics, contact]
+        - name: Verify loopback services
+          ansible.builtin.uri:
+            url: 'http://127.0.0.1:{{ item }}/healthz'
+            status_code: [200,204]
+          loop: [8091,8092]
+        - name: Install and validate the authoritative Caddy configuration
+          ansible.builtin.template:
+            src: templates/Caddyfile.j2
+            dest: /etc/caddy/Caddyfile
+            validate: '/usr/bin/caddy validate --config %s --adapter caddyfile'
+            owner: root
+            group: caddy
+            mode: '0640'
+        - name: Reload Caddy gracefully
+          ansible.builtin.systemd_service:
+            name: caddy
+            state: reloaded
+        - name: Execute first controlled aggregate export
+          ansible.builtin.systemd_service:
+            name: bdb-sheets.service
+            state: started
+        - name: Enable hourly export and daily maintenance timers
+          ansible.builtin.systemd_service:
+            name: '{{ item }}'
+            state: started
+            enabled: true
+          loop: [bdb-sheets.timer,bdb-maintenance.timer]
+        - name: Record preserved rollback target locally
+          ansible.builtin.copy:
+            content: '{{ previous_go_release.stdout | default("initial installation") }}\n'
+            dest: '{{ local_docs_dir }}/go-services/backups/previous-service-release.txt'
+            mode: '0600'
+          delegate_to: localhost
+          become: false
+      rescue:
+        - name: Stop and disable release-owned timers and services before recovery
+          ansible.builtin.systemd_service:
+            name: '{{ item }}'
+            state: stopped
+            enabled: false
+          loop: '{{ go_unit_names }}'
+          failed_when: false
+        - name: Restore previous service pointer without changing persistent data
+          ansible.builtin.shell: 'ln -s {{ previous_go_release.stdout | quote }} {{ go_service_root }}/current.recovery && mv -Tf {{ go_service_root }}/current.recovery {{ go_service_root }}/current'
+          when: previous_go_release is defined and previous_go_release.rc == 0
+          changed_when: true
+        - name: Restore prior Caddy configuration
+          ansible.builtin.copy:
+            src: '{{ local_docs_dir }}/go-services/backups/Caddyfile-{{ ansible_date_time.iso8601_basic_short }}'
+            dest: /etc/caddy/Caddyfile
+            owner: root
+            group: caddy
+            mode: '0640'
+            validate: '/usr/bin/caddy validate --config %s --adapter caddyfile'
+        - name: Reload restored Caddy configuration
+          ansible.builtin.systemd_service:
+            name: caddy
+            state: reloaded
+        - name: Restore prior service and timer definitions
+          ansible.builtin.copy:
+            src: '{{ local_docs_dir }}/go-services/backups/{{ item.item }}-{{ ansible_date_time.iso8601_basic_short }}'
+            dest: '{{ item.stat.path }}'
+            owner: root
+            group: root
+            mode: '0644'
+          loop: '{{ old_units.results }}'
+          loop_control: {label: '{{ item.item }}'}
+          when: item.stat.exists
+        - name: Remove only unit files introduced by the failed initial installation
+          ansible.builtin.file:
+            path: '/etc/systemd/system/{{ item.item }}'
+            state: absent
+          loop: '{{ old_units.results }}'
+          loop_control: {label: '{{ item.item }}'}
+          when: not item.stat.exists
+        - name: Reload restored service definitions
+          ansible.builtin.systemd_service:
+            daemon_reload: true
+        - name: Restore pre-existing units to their prior enabled and active state
+          ansible.builtin.systemd_service:
+            name: '{{ item.item }}'
+            enabled: '{{ "UnitFileState=enabled" in item.stdout }}'
+            state: '{{ "started" if "ActiveState=active" in item.stdout else "stopped" }}'
+          loop: '{{ previous_unit_state.results | default([]) }}'
+          loop_control: {label: '{{ item.item }}'}
+        - name: Report incomplete backend activation
+          ansible.builtin.fail:
+            msg: Backend deployment failed. Prior Caddy and unit state restored; persistent databases preserved. Inspect private logs before retrying.
+      always:
+        - name: Release deployment lock
+          ansible.builtin.file:
+            path: /srv/bendavisbuilds/.deploy-lock
+            state: absent

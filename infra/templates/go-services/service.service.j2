@@ -1,0 +1,45 @@
+[Unit]
+Description=Ben Davis Builds {{ item.name }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type={{ 'oneshot' if item.oneshot | default(false) else 'simple' }}
+User={{ item.user }}
+Group={{ item.group }}
+EnvironmentFile=/etc/bdb/{{ item.name }}/service.env
+Environment=GOMEMLIMIT=96MiB
+Environment=GOMAXPROCS=1
+ExecStart={{ go_service_root }}/current/{{ item.binary }}{{ item.args | default('') }}
+{% if not item.oneshot | default(false) %}
+Restart=on-failure
+RestartSec=5s
+{% endif %}
+TimeoutStartSec=180
+TimeoutStopSec=15
+UMask={{ item.umask }}
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ item.state }}
+InaccessiblePaths={{ item.inaccessible }}
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+TasksMax=64
+MemoryMax=192M
+CPUQuota=25%
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=500
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

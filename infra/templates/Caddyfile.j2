@@ -6,7 +6,20 @@
             roll_keep 3
             roll_keep_for 168h
         }
+{% if go_services_enabled | default(false) %}
+        format filter {
+            wrap json
+            fields {
+                request>remote_ip delete
+                request>remote_port delete
+                request>client_ip delete
+                request>headers delete
+                request>uri delete
+            }
+        }
+{% else %}
         format json
+{% endif %}
     }
 }
 
@@ -32,6 +45,38 @@
         }
         format json
     }
+{% if go_services_enabled | default(false) %}
+    # API payloads and client addresses do not enter access logs.
+    log_skip /api/*
+    route /api/* {
+        request_body {
+            max_size 16KB
+        }
+        @telemetry path /api/telemetry
+        handle @telemetry {
+            reverse_proxy 127.0.0.1:8091 {
+                header_up X-Real-IP {remote_host}
+                transport http {
+                    dial_timeout 2s
+                    response_header_timeout 10s
+                }
+            }
+        }
+        @contact path /api/contact /api/contact/challenge
+        handle @contact {
+            reverse_proxy 127.0.0.1:8092 {
+                header_up X-Real-IP {remote_host}
+                transport http {
+                    dial_timeout 2s
+                    response_header_timeout 25s
+                }
+            }
+        }
+        handle {
+            respond "Not found" 404
+        }
+    }
+{% endif %}
     file_server
     handle_errors 404 {
         header Cache-Control "no-cache"

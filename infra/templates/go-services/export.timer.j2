@@ -1,0 +1,12 @@
+[Unit]
+Description=Hourly aggregate Sheets export
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+FixedRandomDelay=true
+Persistent=true
+Unit=bdb-sheets.service
+
+[Install]
+WantedBy=timers.target

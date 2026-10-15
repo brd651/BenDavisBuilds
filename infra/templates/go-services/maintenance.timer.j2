@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily private analytics backup and retention
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+RandomizedDelaySec=900
+Persistent=true
+Unit=bdb-maintenance.service
+
+[Install]
+WantedBy=timers.target

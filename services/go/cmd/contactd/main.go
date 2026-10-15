@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	platform.Logging()
 	secretPath := platform.Env("BDB_CONTACT_SECRET_FILE", "")
 	if secretPath == "" {
 		slog.Error("contact_secret_file_required")

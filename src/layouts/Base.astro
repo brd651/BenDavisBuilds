@@ -1,5 +1,6 @@
 ---
 import '../styles/site.css';
+import AnalyticsPreferences from '../components/backend/AnalyticsPreferences.astro';
 import BrandMark from '../components/BrandMark.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import HomepageSearch from '../components/HomepageSearch.astro';
@@ -72,6 +73,7 @@ const articleMetadata = Astro.props.articleMetadata;
     {homepageHero && <HeroViewport />}
     <main id="main" class:list={["shell", { "homepage-main": homepageHero }]} tabindex="-1"><slot /></main>
     <SiteFooter sampleContent={sampleContent} />
+    <AnalyticsPreferences />
     <script>
       const control = document.querySelector<HTMLDetailsElement>('.theme-control');
       const trigger = control?.querySelector<HTMLElement>('summary');

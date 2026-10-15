@@ -1,0 +1,31 @@
+---
+import { publicUrls } from '../../lib/publishing';
+const enabled = import.meta.env.PUBLIC_GO_SERVICES_ENABLED === 'true';
+const paths = [...await publicUrls(), '/writing/search/', '/404/'];
+---
+{enabled && <details class="analytics-preferences shell" id="analytics-preferences">
+  <summary>Analytics preferences</summary>
+  <div class="preferences-body">
+    <p>Analytics are off by default. You can allow session counts or also allow a random returning-visitor identifier stored in this browser. Analytics exclude form messages, email addresses, full referrer URLs, and browser fingerprints. Do Not Track and Global Privacy Control disable collection.</p>
+    <div role="group" aria-label="Analytics consent" class="preferences-choices">
+      <button type="button" data-analytics-choice="off" aria-pressed="true">Off</button>
+      <button type="button" data-analytics-choice="session" aria-pressed="false">Session only</button>
+      <button type="button" data-analytics-choice="returning" aria-pressed="false">Allow returning identifier</button>
+    </div>
+    <p data-analytics-status role="status">Off. No analytics events are sent.</p>
+    <noscript><p>JavaScript is disabled. No analytics events are sent.</p></noscript>
+  </div>
+  <script type="application/json" id="analytics-paths" set:html={JSON.stringify(paths).replace(/</g,'\u003c')} />
+</details>}
+<script>
+  import '../../scripts/telemetry';
+</script>
+<style>
+  .analytics-preferences { border-top: 1px solid var(--bs-line); padding-block: 1rem; margin-bottom: 1.5rem; font-size: .875rem; color: var(--bs-muted); }
+  summary { width: fit-content; min-height: 44px; cursor: pointer; padding-block: .5rem; }
+  .preferences-body { max-width: 75ch; padding-block: .75rem; }
+  .preferences-choices { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  button { font: inherit; min-height: 44px; padding: .5rem .8rem; color: var(--bs-text); background: var(--bs-surface); border: 1px solid var(--bs-border); border-radius: 3px; cursor: pointer; }
+  button[aria-pressed="true"] { border-color: var(--bs-accentText); text-decoration: underline; text-underline-offset: .25em; }
+  [data-analytics-status] { margin-bottom: 0; }
+</style>

@@ -34,15 +34,15 @@ try {
   assert.match(landing, /href="\/writing\/automatic-file\/"/,'New Markdown did not use the landing layout.');
   assert.match(landing, /alt="Temporary acceptance illustration\."/,'Optional card image was not rendered.');
   const page2 = await readFile(join(work,'dist/writing/page/2/index.html'),'utf8');
-  assert.ok(!page2.includes('/writing/technical-sample/'),'Older featured story duplicated in Latest pagination.');
+  assert.ok(!page2.includes('href="/writing/technical-sample/"'),'Older featured story duplicated in Latest pagination.');
   assert.ok(!page2.includes('featured-story'),'Feature should only appear on page1.');
-  for(let i=1;i<=6;i++) assert.ok((landing+page2).includes(`/writing/pagination-fixture-${i}/`),'A pagination entry was lost.');
+  for(let i=1;i<=6;i++) assert.ok((landing+page2).includes(`href="/writing/pagination-fixture-${i}/"`),'A pagination entry was lost.');
   // Remove the explicit selection: there must be no arbitrary feature, and all writing returns to Latest.
   await writeFile(technicalPath,technicalSource.replace('featured: true','featured: false'));
   const noFeature = build(); assert.equal(noFeature.status,0,noFeature.stderr+'\n'+noFeature.stdout);
   const noFeatureLanding = await readFile(join(work,'dist/writing/index.html'),'utf8');
   assert.ok(!noFeatureLanding.includes('featured-story'),'No selected article should produce no feature.');
-  assert.ok((await readFile(join(work,'dist/writing/page/2/index.html'),'utf8')).includes('/writing/technical-sample/'),'Unfeatured story missing from Latest.');
+  assert.ok((await readFile(join(work,'dist/writing/page/2/index.html'),'utf8')).includes('href="/writing/technical-sample/"'),'Unfeatured story missing from Latest.');
   for(const file of await textFiles(join(work,'dist'))) { const text=await readFile(file,'utf8'); assert.ok(!/draft-sentinel|future-sentinel/.test(text),`Unpublished content leaked into ${file}`); }
   for(const collection of ['writing','archive','projects']) for(const id of ['draft-sentinel','future-sentinel']) assert.equal(await exists(join(work,'dist',collection==='archive'?'writing/archive':collection,id,'index.html')),false);
   const rss=await readFile(join(work,'dist/rss.xml'),'utf8'); const sitemap=await readFile(join(work,'dist/sitemap.xml'),'utf8'); const search=await readFile(join(work,'dist/search-index.json'),'utf8');

@@ -68,6 +68,20 @@
       loop: '{{ old_units.results | selectattr("stat.exists") | map(attribute="item") | list }}'
       register: previous_unit_state
       changed_when: false
+    - name: Inspect existing Contact transport configuration
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop: [/etc/bdb/contact/service.env, /etc/bdb/contact/mail.json]
+      register: old_contact_config
+      no_log: true
+    - name: Preserve existing Contact configuration privately for recovery
+      ansible.builtin.fetch:
+        src: '{{ item.item }}'
+        dest: '{{ local_docs_dir }}/go-services/backups/contact-{{ item.item | basename }}-{{ ansible_date_time.iso8601_basic_short }}'
+        flat: true
+      when: item.stat.exists
+      loop: '{{ old_contact_config.results }}'
+      no_log: true
     - name: Read current Caddy configuration before any server changes
       ansible.builtin.command: /usr/bin/caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile
       register: before_caddy
@@ -249,7 +263,7 @@
             state: restarted
             enabled: true
             daemon_reload: true
-          loop: [analytics, contact]
+          loop: '{{ go_restart_collectors | default(["analytics","contact"]) }}'
         - name: Verify loopback services
           ansible.builtin.uri:
             url: 'http://127.0.0.1:{{ item }}/healthz'
@@ -271,6 +285,7 @@
           ansible.builtin.systemd_service:
             name: bdb-sheets.service
             state: started
+          when: go_export_on_deploy | default(true) | bool
         - name: Enable hourly export and daily maintenance timers
           ansible.builtin.systemd_service:
             name: '{{ item }}'
@@ -308,6 +323,23 @@
           ansible.builtin.systemd_service:
             name: caddy
             state: reloaded
+        - name: Restore prior Contact transport and environment before restarting code
+          ansible.builtin.copy:
+            src: '{{ local_docs_dir }}/go-services/backups/contact-{{ item.item | basename }}-{{ ansible_date_time.iso8601_basic_short }}'
+            dest: '{{ item.item }}'
+            owner: '{{ item.stat.pw_name }}'
+            group: '{{ item.stat.gr_name }}'
+            mode: '{{ item.stat.mode }}'
+          when: item.stat.exists
+          loop: '{{ old_contact_config.results }}'
+          no_log: true
+        - name: Remove only Contact configuration introduced by a failed activation
+          ansible.builtin.file:
+            path: '{{ item.item }}'
+            state: absent
+          when: not item.stat.exists
+          loop: '{{ old_contact_config.results }}'
+          no_log: true
         - name: Restore prior service and timer definitions
           ansible.builtin.copy:
             src: '{{ local_docs_dir }}/go-services/backups/{{ item.item }}-{{ ansible_date_time.iso8601_basic_short }}'

@@ -3,18 +3,15 @@ package contact
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"crypto/tls"
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/mail"
-	"net/smtp"
 	"net/url"
 	"os"
 	"regexp"
@@ -31,6 +28,8 @@ const (
 	maxBodyBytes  = 16 << 10
 	challengeTTL  = 5 * time.Minute
 	challengeWork = 250_000
+	mailPerHour   = 10
+	mailPerDay    = 50
 )
 
 var (
@@ -104,6 +103,9 @@ func New(cfg Config) (*Handler, error) {
 	db.SetMaxOpenConns(1)
 	for _, q := range []string{
 		`PRAGMA journal_mode=WAL`, `PRAGMA foreign_keys=ON`, `PRAGMA busy_timeout=5000`,
+		`CREATE TABLE IF NOT EXISTS contact_retryable_submissions (submission_id TEXT PRIMARY KEY)`,
+		`CREATE TABLE IF NOT EXISTS contact_mail_attempts (id INTEGER PRIMARY KEY, attempted_at INTEGER NOT NULL)`,
+		`CREATE INDEX IF NOT EXISTS contact_mail_attempts_time ON contact_mail_attempts(attempted_at)`,
 		`CREATE TABLE IF NOT EXISTS contact_submissions (submission_id TEXT PRIMARY KEY, challenge_salt TEXT NOT NULL UNIQUE, request_digest TEXT NOT NULL, created_at INTEGER NOT NULL, status TEXT NOT NULL CHECK(status IN ('pending','sent')))`,
 		`CREATE INDEX IF NOT EXISTS contact_submissions_created_at ON contact_submissions(created_at)`,
 		`CREATE TABLE IF NOT EXISTS contact_challenge_uses (challenge_salt TEXT PRIMARY KEY, submission_id TEXT NOT NULL, created_at INTEGER NOT NULL)`,
@@ -236,6 +238,11 @@ func (h *Handler) submit(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, 200, response{Status: "sent"})
 			return
 		}
+		if errors.Is(err, errMailVolume) {
+			w.Header().Set("Retry-After", "3600")
+			writeError(w, http.StatusTooManyRequests, "mail_limit_reached")
+			return
+		}
 		if errors.Is(err, errSubmissionConflict) || errors.Is(err, errChallengeUsed) {
 			writeError(w, http.StatusConflict, "submission_unconfirmed")
 			return
@@ -244,6 +251,14 @@ func (h *Handler) submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.mailer.Send(msg); err != nil {
+		var safe *retryableDeliveryError
+		if errors.As(err, &safe) {
+			// Keep the original payload digest, challenge binding, and attempt budget.
+			_, _ = h.db.Exec(`INSERT OR IGNORE INTO contact_retryable_submissions(submission_id) VALUES(?)`, req.SubmissionID)
+			w.Header().Set("Retry-After", "60")
+			writeError(w, http.StatusServiceUnavailable, "delivery_temporarily_unavailable")
+			return
+		}
 		writeError(w, http.StatusServiceUnavailable, "delivery_unconfirmed")
 		return
 	}
@@ -303,6 +318,7 @@ func validate(r request) error {
 }
 
 var (
+	errMailVolume         = errors.New("outbound message budget exhausted")
 	errDuplicateSent      = errors.New("matching submission already sent")
 	errSubmissionConflict = errors.New("submission id is already reserved")
 	errChallengeUsed      = errors.New("challenge was already used")
@@ -381,17 +397,47 @@ func (h *Handler) reserve(id, salt, digest string) error {
 	err = tx.QueryRow(`SELECT status, request_digest FROM contact_submissions WHERE submission_id=?`, id).Scan(&status, &storedDigest)
 	switch {
 	case err == nil:
-		if err := tx.Commit(); err != nil {
-			return err
-		}
 		if status == "sent" && storedDigest == digest {
+			if err := tx.Commit(); err != nil {
+				return err
+			}
 			return errDuplicateSent
 		}
-		return errSubmissionConflict
+		if status != "pending" || storedDigest != digest {
+			return errSubmissionConflict
+		}
+		result, deleteErr := tx.Exec(`DELETE FROM contact_retryable_submissions WHERE submission_id=?`, id)
+		if deleteErr != nil {
+			return deleteErr
+		}
+		deleted, deleteErr := result.RowsAffected()
+		if deleteErr != nil {
+			return deleteErr
+		}
+		if deleted != 1 {
+			return errSubmissionConflict
+		}
 	case !errors.Is(err, sql.ErrNoRows):
 		return err
 	}
-	if _, err = tx.Exec(`INSERT INTO contact_submissions(submission_id,challenge_salt,request_digest,created_at,status) VALUES(?,?,?,?,'pending')`, id, salt, digest, time.Now().Unix()); err != nil {
+	if _, err = tx.Exec(`DELETE FROM contact_retryable_submissions WHERE submission_id NOT IN (SELECT submission_id FROM contact_submissions)`); err != nil {
+		return err
+	}
+	now := time.Now().Unix()
+	if _, err = tx.Exec(`DELETE FROM contact_mail_attempts WHERE attempted_at < ?`, now-2*86400); err != nil {
+		return err
+	}
+	var hourly, daily int
+	if err = tx.QueryRow(`SELECT COALESCE(SUM(attempted_at>=?),0),COUNT(*) FROM contact_mail_attempts WHERE attempted_at>=?`, now-3600, now-86400).Scan(&hourly, &daily); err != nil {
+		return err
+	}
+	if hourly >= mailPerHour || daily >= mailPerDay {
+		return errMailVolume
+	}
+	if _, err = tx.Exec(`INSERT INTO contact_mail_attempts(attempted_at) VALUES(?)`, now); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(`INSERT OR IGNORE INTO contact_submissions(submission_id,challenge_salt,request_digest,created_at,status) VALUES(?,?,?,?,'pending')`, id, salt, digest, time.Now().Unix()); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -498,82 +544,4 @@ func parseExpiry(s string) (int64, error) {
 		return 0, errors.New("missing expiry")
 	}
 	return strconv.ParseInt(s, 10, 64)
-}
-
-type SMTPConfig struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	From     string `json:"from"`
-	To       string `json:"to"`
-}
-
-func NewSMTPMailer(c SMTPConfig) (Mailer, error) {
-	if c.Host != "smtp.gmail.com" || (c.Port != 465 && c.Port != 587) || c.Username == "" || c.Password == "" {
-		return nil, errors.New("invalid Gmail SMTP configuration")
-	}
-	from, err := mail.ParseAddress(c.From)
-	if err != nil || from.Address != c.From {
-		return nil, errors.New("invalid sender")
-	}
-	to, err := mail.ParseAddress(c.To)
-	if err != nil || to.Address != "hello@bendavisbuilds.com" {
-		return nil, errors.New("invalid recipient")
-	}
-	return smtpMailer{cfg: c}, nil
-}
-
-type smtpMailer struct{ cfg SMTPConfig }
-
-func (m smtpMailer) Send(msg Message) error {
-	from, _ := mail.ParseAddress(m.cfg.From)
-	to, _ := mail.ParseAddress(m.cfg.To)
-	body := fmt.Sprintf("From: %s\r\nTo: %s\r\nReply-To: %s\r\nSubject: Ben Davis Builds contact: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nName: %s\nEmail: %s\nCategory: %s\nSubmission: %s\n\n%s\n", from.Address, to.Address, msg.Email, msg.Category, msg.Name, msg.Email, msg.Category, msg.SubmissionID, msg.Body)
-	auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
-	addr := net.JoinHostPort(m.cfg.Host, strconv.Itoa(m.cfg.Port))
-	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	if err := conn.SetDeadline(time.Now().Add(20 * time.Second)); err != nil {
-		return err
-	}
-	var smtpConn net.Conn = conn
-	tlsConfig := &tls.Config{ServerName: m.cfg.Host, MinVersion: tls.VersionTLS12}
-	if m.cfg.Port == 465 {
-		tlsConn := tls.Client(conn, tlsConfig)
-		if err := tlsConn.Handshake(); err != nil {
-			return err
-		}
-		smtpConn = tlsConn
-	}
-	client, err := smtp.NewClient(smtpConn, m.cfg.Host)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-	if m.cfg.Port == 587 {
-		if err := client.StartTLS(tlsConfig); err != nil {
-			return err
-		}
-	}
-	if err := client.Auth(auth); err != nil {
-		return err
-	}
-	if err := client.Mail(from.Address); err != nil {
-		return err
-	}
-	if err := client.Rcpt(to.Address); err != nil {
-		return err
-	}
-	w, err := client.Data()
-	if err != nil {
-		return err
-	}
-	if _, err = w.Write([]byte(body)); err != nil {
-		return err
-	}
-	return w.Close()
 }

@@ -9,6 +9,11 @@
     - name: Require an explicit retained release
       ansible.builtin.assert:
         that: go_rollback_release is match('^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$')
+    - name: Require matching mail backup when the previous environment enabled mail
+      ansible.builtin.assert:
+        that: "'BDB_MAIL_CONFIG_FILE=' not in lookup('file', go_contact_env_backup) or go_contact_mail_backup | default('') | length > 0"
+      when: go_contact_env_backup | default('') | length > 0
+      no_log: true
     - name: Verify the older binary accepts the current database before switching
       ansible.builtin.command:
         argv: ['{{ go_service_root }}/releases/{{ go_rollback_release }}/analyticsd', integrity]
@@ -29,6 +34,30 @@
         - name: Switch pointer atomically
           ansible.builtin.command: 'mv -Tf {{ go_service_root }}/current.rollback {{ go_service_root }}/current'
           changed_when: true
+        - name: Restore a previous Contact environment when rolling back transport support
+          ansible.builtin.copy:
+            src: '{{ go_contact_env_backup }}'
+            dest: /etc/bdb/contact/service.env
+            owner: bdb-contact
+            group: bdb-contact
+            mode: '0600'
+          when: go_contact_env_backup | default('') | length > 0
+          no_log: true
+        - name: Restore matching previous mail configuration
+          ansible.builtin.copy:
+            src: '{{ go_contact_mail_backup }}'
+            dest: /etc/bdb/contact/mail.json
+            owner: bdb-contact
+            group: bdb-contact
+            mode: '0600'
+          when: go_contact_mail_backup | default('') | length > 0
+          no_log: true
+        - name: Remove the newly introduced mail configuration when the restored environment had none
+          ansible.builtin.file:
+            path: /etc/bdb/contact/mail.json
+            state: absent
+          when: go_contact_env_backup | default('') | length > 0 and go_contact_mail_backup | default('') | length == 0
+          no_log: true
         - name: Restart loopback services
           ansible.builtin.systemd_service:
             name: 'bdb-{{ item }}.service'

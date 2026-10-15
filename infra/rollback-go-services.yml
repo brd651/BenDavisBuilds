@@ -16,8 +16,7 @@
       no_log: true
     - name: Verify the older binary accepts the current database before switching
       ansible.builtin.command:
-        argv: ['{{ go_service_root }}/releases/{{ go_rollback_release }}/analyticsd', integrity]
-      become_user: bdb-analytics
+        argv: [/usr/sbin/runuser, '-u', bdb-analytics, '--', '{{ go_service_root }}/releases/{{ go_rollback_release }}/analyticsd', integrity]
       environment:
         BDB_ANALYTICS_DB: /var/lib/bdb-analytics/analytics.sqlite
       changed_when: false

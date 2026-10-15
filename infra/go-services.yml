@@ -215,10 +215,9 @@
           when: existing_contact_db.stat.exists
         - name: Take an online database snapshot into private state
           ansible.builtin.command:
-            argv: ['{{ go_service_root }}/current/analyticsd', backup, '/var/lib/bdb-analytics/pre-{{ go_release }}.sqlite']
+            argv: [/usr/sbin/runuser, '-u', bdb-analytics, '--', '{{ go_service_root }}/current/analyticsd', backup, '/var/lib/bdb-analytics/pre-{{ go_release }}.sqlite']
           environment:
             BDB_ANALYTICS_DB: /var/lib/bdb-analytics/analytics.sqlite
-          become_user: bdb-analytics
           when: existing_db.stat.exists
         - name: Fetch snapshot outside Git
           ansible.builtin.fetch:

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -71,6 +72,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	mediaType, _, mediaErr := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if mediaErr != nil || mediaType != "application/json" {
+		http.Error(w, "application/json required", http.StatusUnsupportedMediaType)
+		return
+	}
 	if h.DB == nil || len(h.Secret) < 32 {
 		http.Error(w, "collector unavailable", http.StatusServiceUnavailable)
 		return
@@ -107,7 +113,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	clean := make([]event, len(req.Events))
 	for i, e := range req.Events {
-		if !validEvent(e) || (h.AllowedPaths != nil && !h.AllowedPaths[e.Path]) {
+		if !validEvent(e, h.AllowedPaths) || (h.AllowedPaths != nil && !h.AllowedPaths[e.Path]) {
 			http.Error(w, "invalid event batch", http.StatusBadRequest)
 			return
 		}
@@ -126,7 +132,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func validEvent(e event) bool {
+func validEvent(e event, allowedPaths map[string]bool) bool {
 	if !noncePattern.MatchString(e.ID) || !allowedTypes[e.Type] || !pathPattern.MatchString(e.Path) || strings.Contains(e.Path, "..") || strings.ContainsAny(e.Path, "?#") {
 		return false
 	}
@@ -165,8 +171,39 @@ func validEvent(e event) bool {
 			if json.Unmarshal(raw, &s) != nil || sanitizeHost(s) == "" {
 				return false
 			}
-		case "utm_source", "utm_medium", "utm_campaign", "kind", "destination", "project", "action", "category", "provider":
+		case "utm_source", "utm_medium", "utm_campaign":
 			if json.Unmarshal(raw, &s) != nil || !safeToken(s, 60) {
+				return false
+			}
+		case "kind":
+			if json.Unmarshal(raw, &s) != nil || (s != "article" && s != "page") {
+				return false
+			}
+		case "action":
+			if json.Unmarshal(raw, &s) != nil || (s != "open" && s != "toggle" && s != "select") {
+				return false
+			}
+		case "category":
+			if json.Unmarshal(raw, &s) != nil || (s != "general" && s != "leadership" && s != "project" && s != "mentorship") {
+				return false
+			}
+		case "provider":
+			if json.Unmarshal(raw, &s) != nil || (s != "calendly" && s != "google-calendar") {
+				return false
+			}
+		case "destination":
+			if json.Unmarshal(raw, &s) != nil {
+				return false
+			}
+			if e.Type == "social_click" {
+				if s != "linkedin" && s != "github" && s != "x" {
+					return false
+				}
+			} else if !knownPathSlug(s, allowedPaths) {
+				return false
+			}
+		case "project":
+			if json.Unmarshal(raw, &s) != nil || !knownPathSlug(s, allowedPaths) {
 				return false
 			}
 		case "seconds", "milestone":
@@ -182,6 +219,28 @@ func validEvent(e event) bool {
 		}
 	}
 	return true
+}
+func knownPathSlug(slug string, paths map[string]bool) bool {
+	if !safeToken(slug, 60) {
+		return false
+	}
+	if paths == nil {
+		return false
+	}
+	for path := range paths {
+		candidate := strings.Trim(path, "/")
+		if candidate == "" {
+			candidate = "home"
+		}
+		candidate = strings.ReplaceAll(candidate, "/", "-")
+		if len(candidate) > 60 {
+			continue
+		}
+		if slug == candidate {
+			return true
+		}
+	}
+	return false
 }
 func safeToken(s string, max int) bool {
 	return len(s) <= max && tokenPattern.MatchString(s)
@@ -351,7 +410,7 @@ func Retain(ctx context.Context, db *sql.DB, days int) error {
 	if _, err = tx.ExecContext(ctx, "DELETE FROM events WHERE occurred_at < ?", cutoff); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE started_at < ?", cutoff); err != nil {
+	if _, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE last_seen < ? AND NOT EXISTS (SELECT 1 FROM events WHERE events.session_id=sessions.id)", cutoff); err != nil {
 		return err
 	}
 	if _, err = tx.ExecContext(ctx, "DELETE FROM visitors WHERE last_seen < ? AND NOT EXISTS (SELECT 1 FROM sessions WHERE sessions.visitor_id=visitors.id)", cutoff); err != nil {

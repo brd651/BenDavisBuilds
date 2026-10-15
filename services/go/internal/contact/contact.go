@@ -104,13 +104,23 @@ func New(cfg Config) (*Handler, error) {
 	db.SetMaxOpenConns(1)
 	for _, q := range []string{
 		`PRAGMA journal_mode=WAL`, `PRAGMA foreign_keys=ON`, `PRAGMA busy_timeout=5000`,
-		`CREATE TABLE IF NOT EXISTS contact_submissions (submission_id TEXT PRIMARY KEY, challenge_salt TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL, status TEXT NOT NULL CHECK(status IN ('pending','sent')))`,
+		`CREATE TABLE IF NOT EXISTS contact_submissions (submission_id TEXT PRIMARY KEY, challenge_salt TEXT NOT NULL UNIQUE, request_digest TEXT NOT NULL, created_at INTEGER NOT NULL, status TEXT NOT NULL CHECK(status IN ('pending','sent')))`,
 		`CREATE INDEX IF NOT EXISTS contact_submissions_created_at ON contact_submissions(created_at)`,
+		`CREATE TABLE IF NOT EXISTS contact_challenge_uses (challenge_salt TEXT PRIMARY KEY, submission_id TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+		`CREATE INDEX IF NOT EXISTS contact_challenge_uses_created_at ON contact_challenge_uses(created_at)`,
 	} {
 		if _, err := db.Exec(q); err != nil {
 			db.Close()
 			return nil, err
 		}
+	}
+	if err := ensureDigestColumn(db); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if _, err := db.Exec(`INSERT OR IGNORE INTO contact_challenge_uses(challenge_salt,submission_id,created_at) SELECT challenge_salt,submission_id,created_at FROM contact_submissions`); err != nil {
+		db.Close()
+		return nil, err
 	}
 	if err := os.Chmod(cfg.DBPath, 0600); err != nil {
 		db.Close()
@@ -219,22 +229,26 @@ func (h *Handler) submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	salt := p.Salt
-	if err := h.reserve(req.SubmissionID, salt); err != nil {
-		if errors.Is(err, errDuplicate) {
+	msg := Message{Name: strings.TrimSpace(req.Name), Email: strings.TrimSpace(req.Email), Category: req.Category, Body: strings.TrimSpace(req.Message), SubmissionID: req.SubmissionID}
+	digest := h.requestDigest(msg)
+	if err := h.reserve(req.SubmissionID, salt, digest); err != nil {
+		if errors.Is(err, errDuplicateSent) {
 			writeJSON(w, 200, response{Status: "sent"})
+			return
+		}
+		if errors.Is(err, errSubmissionConflict) || errors.Is(err, errChallengeUsed) {
+			writeError(w, http.StatusConflict, "submission_unconfirmed")
 			return
 		}
 		writeError(w, 503, "temporarily_unavailable")
 		return
 	}
-	msg := Message{Name: strings.TrimSpace(req.Name), Email: strings.TrimSpace(req.Email), Category: req.Category, Body: strings.TrimSpace(req.Message), SubmissionID: req.SubmissionID}
 	if err := h.mailer.Send(msg); err != nil {
-		h.unreserve(req.SubmissionID)
-		writeError(w, 502, "delivery_failed")
+		writeError(w, http.StatusServiceUnavailable, "delivery_unconfirmed")
 		return
 	}
 	if _, err := h.db.Exec(`UPDATE contact_submissions SET status='sent' WHERE submission_id=?`, req.SubmissionID); err != nil {
-		writeError(w, 503, "temporarily_unavailable")
+		writeError(w, http.StatusServiceUnavailable, "delivery_unconfirmed")
 		return
 	}
 	writeJSON(w, 200, response{Status: "sent"})
@@ -288,46 +302,138 @@ func validate(r request) error {
 	return nil
 }
 
-var errDuplicate = errors.New("duplicate submission")
+var (
+	errDuplicateSent      = errors.New("matching submission already sent")
+	errSubmissionConflict = errors.New("submission id is already reserved")
+	errChallengeUsed      = errors.New("challenge was already used")
+)
 
-func (h *Handler) reserve(id, salt string) error {
-	_, err := h.db.Exec(`DELETE FROM contact_submissions WHERE created_at < ? AND status='sent'`, time.Now().Add(-30*24*time.Hour).Unix())
+func ensureDigestColumn(db *sql.DB) error {
+	rows, err := db.Query(`PRAGMA table_info(contact_submissions)`)
 	if err != nil {
 		return err
 	}
-	_, err = h.db.Exec(`INSERT INTO contact_submissions(submission_id,challenge_salt,created_at,status) VALUES(?,?,?,'pending')`, id, salt, time.Now().Unix())
-	if err != nil {
-		var count int
-		if e := h.db.QueryRow(`SELECT COUNT(*) FROM contact_submissions WHERE submission_id=? OR challenge_salt=?`, id, salt).Scan(&count); e == nil && count > 0 {
-			return errDuplicate
+	found := false
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, typ string
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &defaultValue, &pk); err != nil {
+			_ = rows.Close()
+			return err
 		}
+		if name == "request_digest" {
+			found = true
+			break
+		}
+	}
+	rowErr := rows.Err()
+	if err := rows.Close(); err != nil {
 		return err
 	}
-	return nil
+	if rowErr != nil {
+		return rowErr
+	}
+	if found {
+		return nil
+	}
+	_, err = db.Exec(`ALTER TABLE contact_submissions ADD COLUMN request_digest TEXT NOT NULL DEFAULT ''`)
+	return err
 }
-func (h *Handler) unreserve(id string) {
-	_, _ = h.db.Exec(`DELETE FROM contact_submissions WHERE submission_id=? AND status='pending'`, id)
+
+func (h *Handler) requestDigest(msg Message) string {
+	canonical, _ := json.Marshal([]string{strings.TrimSpace(msg.Name), strings.ToLower(strings.TrimSpace(msg.Email)), msg.Category, strings.TrimSpace(msg.Body)})
+	mac := hmac.New(sha256.New, h.secret)
+	_, _ = mac.Write(canonical)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func (h *Handler) reserve(id, salt, digest string) error {
+	tx, err := h.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	cutoff := time.Now().Add(-30 * 24 * time.Hour).Unix()
+	if _, err = tx.Exec(`DELETE FROM contact_challenge_uses WHERE created_at < ?`, cutoff); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(`DELETE FROM contact_submissions WHERE created_at < ?`, cutoff); err != nil {
+		return err
+	}
+	var challengeSubmissionID string
+	err = tx.QueryRow(`SELECT submission_id FROM contact_challenge_uses WHERE challenge_salt=?`, salt).Scan(&challengeSubmissionID)
+	if err == nil && challengeSubmissionID != id {
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		return errChallengeUsed
+	}
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		if _, err = tx.Exec(`INSERT INTO contact_challenge_uses(challenge_salt,submission_id,created_at) VALUES(?,?,?)`, salt, id, time.Now().Unix()); err != nil {
+			return err
+		}
+	}
+	var status, storedDigest string
+	err = tx.QueryRow(`SELECT status, request_digest FROM contact_submissions WHERE submission_id=?`, id).Scan(&status, &storedDigest)
+	switch {
+	case err == nil:
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		if status == "sent" && storedDigest == digest {
+			return errDuplicateSent
+		}
+		return errSubmissionConflict
+	case !errors.Is(err, sql.ErrNoRows):
+		return err
+	}
+	if _, err = tx.Exec(`INSERT INTO contact_submissions(submission_id,challenge_salt,request_digest,created_at,status) VALUES(?,?,?,?,'pending')`, id, salt, digest, time.Now().Unix()); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (h *Handler) checkOrigin(w http.ResponseWriter, r *http.Request) bool {
 	origin := r.Header.Get("Origin")
 	if origin == "" {
-		writeError(w, 403, "origin_required")
-		return false
-	}
-	if h.origin != "" {
-		if origin != h.origin {
-			writeError(w, 403, "origin_denied")
+		if r.Method != http.MethodGet {
+			writeError(w, 403, "origin_required")
 			return false
+		}
+		if r.Header.Get("Sec-Fetch-Site") == "same-origin" {
+			if h.origin != "" {
+				configured, err := url.Parse(h.origin)
+				if err != nil || !strings.EqualFold(configured.Host, r.Host) {
+					writeError(w, 403, "origin_denied")
+					return false
+				}
+			}
+		} else {
+			ref, err := url.Parse(r.Header.Get("Referer"))
+			if err != nil || ref.Scheme == "" || ref.Host == "" || !h.matchesOrigin(ref.Scheme+"://"+ref.Host, r) {
+				writeError(w, 403, "origin_required")
+				return false
+			}
 		}
 		return true
 	}
-	u, err := url.Parse(origin)
-	if err != nil || u.Host == "" || !strings.EqualFold(u.Host, r.Host) {
+	if !h.matchesOrigin(origin, r) {
 		writeError(w, 403, "origin_denied")
 		return false
 	}
 	return true
+}
+
+func (h *Handler) matchesOrigin(origin string, r *http.Request) bool {
+	if h.origin != "" {
+		return origin == h.origin
+	}
+	u, err := url.Parse(origin)
+	return err == nil && u.Host != "" && strings.EqualFold(u.Host, r.Host)
 }
 
 func (h *Handler) allow(r *http.Request) bool {
@@ -335,13 +441,19 @@ func (h *Handler) allow(r *http.Request) bool {
 	if err != nil {
 		host = r.RemoteAddr
 	}
-	// The service only listens on loopback behind Caddy. Caddy appends the
-	// connected client address to X-Forwarded-For; use its final valid entry.
-	forwarded := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
-	if len(forwarded) > 0 {
-		candidate := strings.TrimSpace(forwarded[len(forwarded)-1])
-		if ip := net.ParseIP(candidate); ip != nil {
+	peer := net.ParseIP(host)
+	if peer != nil && peer.IsLoopback() {
+		if ip := net.ParseIP(strings.TrimSpace(r.Header.Get("X-Real-IP"))); ip != nil {
 			host = ip.String()
+		} else {
+			// Only trust proxy metadata when the connection itself came from loopback.
+			forwarded := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
+			if len(forwarded) > 0 {
+				candidate := strings.TrimSpace(forwarded[len(forwarded)-1])
+				if ip := net.ParseIP(candidate); ip != nil {
+					host = ip.String()
+				}
+			}
 		}
 	}
 	mac := hmac.New(sha256.New, h.secret)
@@ -420,35 +532,48 @@ func (m smtpMailer) Send(msg Message) error {
 	body := fmt.Sprintf("From: %s\r\nTo: %s\r\nReply-To: %s\r\nSubject: Ben Davis Builds contact: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nName: %s\nEmail: %s\nCategory: %s\nSubmission: %s\n\n%s\n", from.Address, to.Address, msg.Email, msg.Category, msg.Name, msg.Email, msg.Category, msg.SubmissionID, msg.Body)
 	auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
 	addr := net.JoinHostPort(m.cfg.Host, strconv.Itoa(m.cfg.Port))
-	if m.cfg.Port == 465 {
-		conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
-		if err != nil {
-			return err
-		}
-		tlsConn := tls.Client(conn, &tls.Config{ServerName: m.cfg.Host, MinVersion: tls.VersionTLS12})
-		defer tlsConn.Close()
-		client, err := smtp.NewClient(tlsConn, m.cfg.Host)
-		if err != nil {
-			return err
-		}
-		defer client.Close()
-		if err = client.Auth(auth); err != nil {
-			return err
-		}
-		if err = client.Mail(from.Address); err != nil {
-			return err
-		}
-		if err = client.Rcpt(to.Address); err != nil {
-			return err
-		}
-		w, err := client.Data()
-		if err != nil {
-			return err
-		}
-		if _, err = w.Write([]byte(body)); err != nil {
-			return err
-		}
-		return w.Close()
+	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
+	if err != nil {
+		return err
 	}
-	return smtp.SendMail(addr, auth, from.Address, []string{to.Address}, []byte(body))
+	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(20 * time.Second)); err != nil {
+		return err
+	}
+	var smtpConn net.Conn = conn
+	tlsConfig := &tls.Config{ServerName: m.cfg.Host, MinVersion: tls.VersionTLS12}
+	if m.cfg.Port == 465 {
+		tlsConn := tls.Client(conn, tlsConfig)
+		if err := tlsConn.Handshake(); err != nil {
+			return err
+		}
+		smtpConn = tlsConn
+	}
+	client, err := smtp.NewClient(smtpConn, m.cfg.Host)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+	if m.cfg.Port == 587 {
+		if err := client.StartTLS(tlsConfig); err != nil {
+			return err
+		}
+	}
+	if err := client.Auth(auth); err != nil {
+		return err
+	}
+	if err := client.Mail(from.Address); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to.Address); err != nil {
+		return err
+	}
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write([]byte(body)); err != nil {
+		return err
+	}
+	return w.Close()
 }

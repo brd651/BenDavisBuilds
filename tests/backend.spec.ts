@@ -50,7 +50,7 @@ for(const theme of ['dark','light']) test(`Contact lazy browser proof and safe d
  await page.route('**/api/telemetry',async route=>{batches.push(JSON.parse(route.request().postData()!));await route.fulfill({status:204})});
  page.on('request',request=>{if(request.url().includes('contact-pow'))workerRequests++;});
  const salt='browser-contract?expires=2000000000&';const challenge=createHash('sha256').update(salt+'3').digest('hex');
- await page.route('**/api/contact/challenge',async route=>{challenges++;await route.fulfill({json:{algorithm:'SHA-256',challenge,salt,signature:'fixture',maxnumber:100}})});
+ await page.route('**/api/contact/challenge',async route=>{challenges++;await route.fulfill({json:{algorithm:'SHA-256',challenge,salt,signature:'fixture',maxNumber:100}})});
  await page.route('**/api/contact',async route=>{submitted=JSON.parse(route.request().postData()!);await route.fulfill({json:{status:'sent'}})});
  await page.goto('/contact/');expect(challenges).toBe(0);expect(workerRequests).toBe(0);
  await page.getByText('Analytics preferences',{exact:true}).click();await page.getByRole('button',{name:'Session only',exact:true}).click();await page.getByLabel('About',{exact:true}).selectOption('mentorship');

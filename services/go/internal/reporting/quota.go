@@ -55,7 +55,10 @@ func (b *Budget) Acquire(ctx context.Context, scheduled bool) (func(), error) {
 	}
 	if scheduled {
 		var last int64
-		_ = tx.QueryRowContext(ctx, `SELECT CAST(value AS INTEGER) FROM sheets_export_state WHERE key='last_scheduled'`).Scan(&last)
+		queryErr := tx.QueryRowContext(ctx, `SELECT CAST(value AS INTEGER) FROM sheets_export_state WHERE key='last_scheduled'`).Scan(&last)
+		if queryErr != nil && queryErr != sql.ErrNoRows {
+			return nil, queryErr
+		}
 		if last > 0 && now.Unix()-last < 3600 {
 			return nil, ErrDeferred
 		}
@@ -97,6 +100,61 @@ func (b *Budget) Reserve(ctx context.Context) error {
 }
 
 func (b *Budget) MarkSuccess(ctx context.Context, at time.Time) error {
-	_, err := b.DB.ExecContext(ctx, `INSERT INTO sheets_export_state(key,value) VALUES('last_success',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, at.UTC().Format(time.RFC3339))
+	tx, err := b.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stamp := at.UTC().Format(time.RFC3339)
+	for key, value := range map[string]string{"last_success": stamp, "last_attempt": stamp, "last_status": "success"} {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO sheets_export_state(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, value); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (b *Budget) MarkAttempt(ctx context.Context, at time.Time) error {
+	stamp := at.UTC().Format(time.RFC3339)
+	tx, err := b.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for key, value := range map[string]string{"last_attempt": stamp, "last_status": "running"} {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO sheets_export_state(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, value); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (b *Budget) MarkDeferred(ctx context.Context, reason string) error {
+	return b.SetState(ctx, "last_status", "deferred:"+reason)
+}
+
+func (b *Budget) MarkFailure(ctx context.Context) error {
+	return b.SetState(ctx, "last_status", "failed")
+}
+
+func (b *Budget) GetState(ctx context.Context, key string) (string, bool, error) {
+	var value string
+	err := b.DB.QueryRowContext(ctx, `SELECT value FROM sheets_export_state WHERE key=?`, key).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	return value, true, nil
+}
+
+func (b *Budget) SetState(ctx context.Context, key, value string) error {
+	_, err := b.DB.ExecContext(ctx, `INSERT INTO sheets_export_state(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, value)
+	return err
+}
+
+func (b *Budget) DeleteState(ctx context.Context, key string) error {
+	_, err := b.DB.ExecContext(ctx, `DELETE FROM sheets_export_state WHERE key=?`, key)
 	return err
 }

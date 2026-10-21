@@ -38,7 +38,7 @@ I don't think military leadership should simply be copied into a business enviro
 
 <div class="principles-context">
 
-These are the principles I try to put into practice—not just ideas I expect others to follow.
+These are the principles I try to put into practice, not just ideas I expect others to follow.
 
 </div>
 </div>
@@ -110,7 +110,7 @@ Confidence is one of the most useful tools a sales engineer can develop. It come
 </div>
 <blockquote class="chapter-pull">
 
-A confident SE doesn't need to know every answer. They need to ask good questions, explain what they know, acknowledge what they don't, and follow through. Saying “I don't know—let me validate that” often builds more trust than a confident answer that turns out to be wrong.
+A confident SE doesn't need to know every answer. They need to ask good questions, explain what they know, acknowledge what they don't, and follow through. Saying “I don't know. Let me validate that” often builds more trust than a confident answer that turns out to be wrong.
 
 </blockquote>
 
@@ -120,7 +120,7 @@ A confident SE doesn't need to know every answer. They need to ask good question
 
 I've been in customer conversations where understanding the real concern and giving a credible answer mattered more than another demonstration or feature list. That kind of confidence isn't a performance. It's earned through preparation, product knowledge, experience, and judgment.
 
-I want SEs who can speak with conviction without crossing the line into arrogance—and who never confuse a sales commitment with a technically supportable one.
+I want SEs who can speak with conviction without crossing the line into arrogance and who never confuse a sales commitment with a technically supportable one.
 
 </div>
 
@@ -178,7 +178,7 @@ I've spent a meaningful part of my career finding ways to simplify work, automat
 </div>
 <blockquote class="chapter-pull">
 
-Reviews, clear ownership, reasonable turnaround times, and escalation paths can protect quality and help teams make reliable commitments. The issue is when a process creates more work than value—or when constant exceptions make the standard meaningless.
+Reviews, clear ownership, reasonable turnaround times, and escalation paths can protect quality and help teams make reliable commitments. The issue is when a process creates more work than value, or when constant exceptions make the standard meaningless.
 
 </blockquote>
 
@@ -329,7 +329,7 @@ The lesson wasn't to avoid technical work. It was to keep asking questions until
 </div>
 <div class="coaching-copy">
 
-When someone is struggling, my starting point is to understand how to help them succeed—not immediately look for a replacement.
+When someone is struggling, my starting point is to understand how to help them succeed, not immediately look for a replacement.
 
 That means identifying the gap, giving specific feedback, setting reasonable expectations, and following through on a development plan. I don't consider encouragement alone to be coaching; people need clarity, practice, and a fair way to show progress.
 
@@ -348,7 +348,7 @@ A fair opportunity to improve doesn't mean avoiding a difficult decision indefin
 
 I'm very open with my peers and senior leaders about what's happening on the ground, what we're doing about it, and where risks may be emerging.
 
-If I see early signs of an issue that could reach them, I want them to hear it from me first. I don't wait for a problem to become urgent—or for someone else to bring it to their attention.
+If I see early signs of an issue that could reach them, I want them to hear it from me first. I don't wait for a problem to become urgent or for someone else to bring it to their attention.
 
 But proactive communication isn't the same thing as passing the problem upward. I should handle what belongs at my level, keep ownership of the response, and give other leaders enough context that they're never blindsided by something material.
 

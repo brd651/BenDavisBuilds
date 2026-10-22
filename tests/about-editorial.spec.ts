@@ -148,6 +148,8 @@ for (const width of [1440, 1920, 3840]) test(`Chapter menu stays inside timeline
     const timeline = (await region.boundingBox())!;
     expect(menu.y).toBeGreaterThanOrEqual(timeline.y - 1);
     expect(menu.y + menu.height).toBeLessThanOrEqual(timeline.y + timeline.height + 1);
-    expect(menu.x + menu.width).toBeLessThan(timeline.x);
+    expect(menu.x).toBeGreaterThanOrEqual(8);
+    const gap = timeline.x - (menu.x + menu.width);
+    expect(gap).toBeGreaterThanOrEqual(width >= 1920 ? 178 : 44);
   }
 });

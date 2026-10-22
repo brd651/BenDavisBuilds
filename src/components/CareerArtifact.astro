@@ -1,0 +1,57 @@
+---
+import type { CareerArtifactKind } from '../data/career-editorial';
+interface Props { kind: CareerArtifactKind; id: string }
+const { kind, id } = Astro.props;
+---
+{kind === 'reproduction' && <figure class="career-artifact reproduction">
+  <p class="artifact-label">Field sketch / Troubleshooting</p>
+  <svg viewBox="0 0 360 174" role="img" aria-labelledby={`${id}-artifact-title`}>
+    <title id={`${id}-artifact-title`}>Recreate a problem, test assumptions, and understand the failure.</title>
+    <path class="guide" d="M20 39H340 M20 135H340 M37 20V154 M323 20V154" />
+    <path class="connector" d="M73 86H158 M201 86H286" />
+    <path class="arrow" d="M148 81L158 86 148 91 M276 81L286 86 276 91" />
+    <rect x="34" y="64" width="44" height="44" rx="3" /><circle cx="180" cy="86" r="23" /><path class="terminal" d="M286 64H330V108H286Z M295 79L302 86 295 93 M308 94H320" />
+    <path class="register" d="M12 26V12H26 M334 12H348V26 M12 148V162H26 M334 162H348V148" />
+  </svg>
+  <ol class="artifact-steps"><li>Recreate</li><li>Test</li><li>Understand</li></ol>
+  <figcaption>Concept sketch of the troubleshooting approach. Illustrative, not a diagram of customer or lab systems.</figcaption>
+</figure>}
+{kind === 'automation' && <figure class="career-artifact automation">
+  <p class="artifact-label">Field sketch / Repeatable work</p>
+  <svg viewBox="0 0 360 176" role="img" aria-labelledby={`${id}-artifact-title`}>
+    <title id={`${id}-artifact-title`}>Reduce repetitive work and make the next problem easier to solve.</title>
+    <path class="guide" d="M22 40H338 M22 138H338" />
+    <path class="connector" d="M43 50V108H129 M160 108H245 M276 108H324" />
+    <circle cx="43" cy="50" r="5" /><circle cx="144" cy="108" r="14" /><circle cx="260" cy="108" r="14" /><path class="arrow" d="M314 103L324 108 314 113" />
+    <path class="loop" d="M260 92V50Q260 32 242 32H162Q144 32 144 50V83 M139 73L144 83 149 73" />
+  </svg>
+  <ol class="artifact-steps"><li>A problem</li><li>Reduce repetition</li><li>The next problem</li></ol>
+  <figcaption>Concept sketch of repeatable work. Illustrative, not an operational workflow or measured result.</figcaption>
+</figure>}
+{kind === 'archive' && <figure class="career-artifact archive">
+  <p class="artifact-label">From the archive / Historical writing</p>
+  <p class="archive-name">Theory<span>IT</span><span class="archive-dot" aria-hidden="true">.</span></p>
+  <p class="archive-context">Projects, experiments, and troubleshooting lessons.</p>
+  <a href="https://web.archive.org/web/20190109115510/https://theoryit.com/" target="_blank" rel="noopener noreferrer">Explore the original TheoryIT archive <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+  <figcaption>Historical material from the Internet Archive. I no longer control the original theoryit.com domain.</figcaption>
+</figure>}
+
+<style>
+  .career-artifact { margin: 2rem 0 0; padding: 1.15rem; text-align: left; border: 1px solid var(--bs-border); background: var(--bs-surface); }
+  .artifact-label { font-size: .625rem; text-transform: uppercase; letter-spacing: .12em; color: var(--chapter-muted, var(--bs-muted)); margin: 0 0 .75rem; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg path, svg rect, svg circle { fill: var(--bs-surface); stroke: var(--bs-border); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  svg .connector, svg .arrow, svg .terminal { stroke: var(--bs-accentText); fill: none; }
+  svg .guide { stroke: var(--bs-line); stroke-width: 1; fill: none; }
+  svg .register { stroke: var(--bs-brass); stroke-width: 1; fill: none; }
+  svg .loop { stroke: var(--bs-brass); fill: none; stroke-dasharray: 3 4; }
+  .artifact-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin: -.25rem 0 0; padding: 0; list-style: none; color: var(--bs-text); font-size: .6875rem; line-height: 1.5; text-align: center; }
+  figcaption { margin: 1rem 0 0; color: var(--chapter-muted, var(--bs-muted)); font-size: .75rem; line-height: 1.65; }
+  .archive { border-left: 2px solid var(--bs-brass); background: var(--bs-page); padding: 1.5rem; }
+  .archive-name { font-size: clamp(2.5rem, 4vw, 3.5rem); line-height: 1; letter-spacing: -.07em; font-weight: 650; margin: 1.25rem 0 1rem; }
+  .archive-name > span:first-child { font-weight: 350; }
+  .archive-dot { color: var(--bs-accentText); }
+  .archive-context { color: var(--chapter-muted, var(--bs-muted)); font-size: .875rem; line-height: 1.7; }
+  .archive a { display: inline-block; font-size: .8125rem; line-height: 1.7; }
+  @media (forced-colors: active) { svg path, svg rect, svg circle { stroke: CanvasText; } svg text { fill: CanvasText; } }
+</style>

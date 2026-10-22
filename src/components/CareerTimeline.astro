@@ -1,8 +1,10 @@
 ---
 import type { CareerStage } from '../data/career';
 import BrandMark from './BrandMark.astro';
-interface Props { stages: readonly CareerStage[] }
-const { stages } = Astro.props;
+import CareerArtifact from './CareerArtifact.astro';
+import type { CareerReflection } from '../data/career-editorial';
+interface Props { stages: readonly CareerStage[]; reflections?: Readonly<Record<string, CareerReflection>> }
+const { stages, reflections } = Astro.props;
 ---
 <div class="career-timeline" data-career-timeline data-motion="false">
   <div class="timeline-toolbar"><button type="button" data-timeline-motion hidden>Pause timeline motion</button></div>
@@ -18,11 +20,13 @@ const { stages } = Astro.props;
         {stage.kind === 'personal' && <div class="stage-brand"><BrandMark class="timeline-brand-mark" /></div>}
         <p class="stage-organization">{stage.organization}</p>
         <p class="stage-theme">{stage.theme}</p>
+        {reflections?.[stage.id]?.artifact && <CareerArtifact kind={reflections[stage.id].artifact!} id={stage.id} />}
       </div>
       <span class="milestone" aria-hidden="true"><span class="milestone-number">{String(index + 1).padStart(2, '0')}</span></span>
       <div class="stage-story">
         <h3>{stage.role}</h3>
         <p>{stage.summary}</p>
+        {reflections?.[stage.id] && <figure class="carry-forward"><figcaption>What I carried forward</figcaption><blockquote><p>{reflections[stage.id].text}</p></blockquote></figure>}
         {stage.expansion && <details>
           <summary>{stage.expansion.label}<span class="disclosure-icon" aria-hidden="true">+</span></summary>
           <div class="stage-detail">
@@ -138,6 +142,10 @@ const { stages } = Astro.props;
   @media (any-hover: hover) {
     .career-stages:has(> .career-stage:hover):not(:has(:focus-visible)) > .career-stage:not(:hover) { --chapter-opacity: .68; --chapter-muted: var(--bs-text); }
   }
+  .carry-forward { margin: 1.75rem 0; padding: 1.25rem 0 0; border-top: 1px solid var(--bs-brass); }
+  .carry-forward figcaption { margin: 0 0 .8rem; color: var(--chapter-muted, var(--bs-muted)); font-size: .625rem; line-height: 1.5; text-transform: uppercase; letter-spacing: .13em; }
+  .carry-forward blockquote { margin: 0; }
+  .carry-forward blockquote p { font-family: ui-serif, Georgia, serif; font-size: clamp(1.2rem, 1.6vw, 1.45rem); line-height: 1.55; color: var(--bs-text); margin: 0; }
   @media (max-width: 800px) {
     .career-stages { --stage-gap: 3.5rem; }
     [data-motion="true"] .stage-story h3, [data-motion="true"] .stage-organization, [data-motion="true"] .stage-logo { transform: none; }

@@ -1,0 +1,67 @@
+---
+import type { CareerStage } from '../data/career';
+interface Props { stages: readonly CareerStage[] }
+const { stages } = Astro.props;
+---
+<nav class="chapter-index" aria-label="Career chapters" data-chapter-index>
+  <div class="index-heading"><p class="eyebrow">The chapters</p><span>{String(stages.length).padStart(2, '0')}</span></div>
+  <ol>{stages.map((stage, index) => <li><a href={`#${stage.id}`}><span class="index-number">{String(index + 1).padStart(2, '0')}</span><span>{stage.label}</span><span class="index-marker" aria-hidden="true">↗</span></a></li>)}</ol>
+  <a class="compare-link" href="/about/">Compare the current About page <span aria-hidden="true">↗</span></a>
+</nav>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-chapter-index]').forEach(nav => {
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>('ol a')];
+    const chapters = links.map(link => document.getElementById(link.hash.slice(1))!);
+    if (chapters.some(chapter => !chapter)) return;
+    let frame = 0;
+    let active = -1;
+    const update = () => {
+      frame = 0;
+      // Read all seven positions before changing the index; chapter layout stays stable.
+      const positions = chapters.map(chapter => {
+        const marker = chapter.querySelector('.milestone')!.getBoundingClientRect();
+        return marker.top + marker.height / 2;
+      });
+      let next = 0;
+      positions.forEach((top, index) => { if (top <= innerHeight * .45) next = index; });
+      if (next === active) return;
+      active = next;
+      links.forEach((link, index) => {
+        if (index === active) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    const region = nav.closest('[data-career-editorial]')!;
+    region.addEventListener('toggle', schedule, true);
+    if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(region);
+    window.addEventListener('hashchange', schedule);
+    window.addEventListener('pageshow', schedule);
+    schedule();
+  });
+</script>
+
+<style>
+  .chapter-index { position: sticky; top: 1.5rem; align-self: start; max-height: calc(100svh - 3rem); overflow-y: auto; scrollbar-width: thin; padding: .25rem .6rem .75rem .25rem; }
+  .index-heading { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--bs-border); padding-top: 1rem; gap: 1rem; }
+  .index-heading p { font-size: .625rem; margin: 0 0 1rem; }
+  .index-heading > span { color: var(--bs-muted); font: .6875rem ui-monospace, monospace; }
+  ol { padding: 0; margin: 0; list-style: none; }
+  ol a { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) .75rem; gap: .5rem; align-items: baseline; padding: .85rem .4rem .85rem .5rem; border-left: 2px solid transparent; color: var(--bs-muted); font-size: .75rem; line-height: 1.5; text-decoration: none; }
+  ol a:hover { color: var(--bs-text); text-decoration: underline; text-underline-offset: .25em; }
+  .index-number { font-family: ui-monospace, monospace; font-size: .625rem; }
+  .index-marker { visibility: hidden; }
+  ol a[aria-current] { color: var(--bs-text); border-color: var(--bs-accentText); background: var(--bs-surface); text-decoration: underline; text-underline-offset: .25em; }
+  ol a[aria-current] .index-marker { visibility: visible; }
+  .compare-link { display: block; margin-top: 1.75rem; padding: .5rem; border-top: 1px solid var(--bs-line); font-size: .75rem; color: var(--bs-muted); line-height: 1.7; }
+  @media (max-width: 1100px) {
+    .chapter-index { position: static; max-height: none; overflow: visible; padding: 0; margin-bottom: 1.5rem; }
+    ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+    .compare-link { display: none; }
+  }
+  @media (max-width: 600px) { ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (forced-colors: active) { ol a[aria-current] { border-color: Highlight; } }
+</style>

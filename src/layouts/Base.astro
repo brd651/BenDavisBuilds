@@ -6,9 +6,9 @@ import HomepageSearch from '../components/HomepageSearch.astro';
 import ThemeControl from '../components/ThemeControl.astro';
 import SiteNavigation from '../components/SiteNavigation.astro';
 import HeroViewport from '../components/HeroViewport.astro';
-interface Props { title: string; description?: string; homepageHero?: boolean; sampleContent?: boolean; socialMetadata?: boolean; articleMetadata?: { publishedAt?: string; updatedAt?: string; author?: string; image?: string; imageAlt?: string } }
+interface Props { noindex?: boolean; title: string; description?: string; homepageHero?: boolean; sampleContent?: boolean; socialMetadata?: boolean; articleMetadata?: { publishedAt?: string; updatedAt?: string; author?: string; image?: string; imageAlt?: string } }
 const { title, homepageHero = false, sampleContent = true, socialMetadata = false, description = 'Built Signal development template. Clearly labeled sample content.' } = Astro.props;
-const noindex = import.meta.env.PUBLIC_NOINDEX !== 'false';
+const noindex = Astro.props.noindex ?? (import.meta.env.PUBLIC_NOINDEX !== 'false');
 const path = Astro.url.pathname;
 const canonical = new URL(path, Astro.site);
 const articleMetadata = Astro.props.articleMetadata;

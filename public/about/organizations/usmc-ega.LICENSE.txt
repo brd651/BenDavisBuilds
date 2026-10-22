@@ -1,0 +1,10 @@
+# United States Marine Corps emblem
+
+`usmc-ega.svg` is the unmodified Eagle, Globe and Anchor vector from
+https://commons.wikimedia.org/wiki/File:Eagle,_Globe_and_Anchor.svg
+(original https://upload.wikimedia.org/wikipedia/commons/3/3a/Eagle%2C_Globe_and_Anchor.svg).
+
+The source identifies it as a U.S. Marine Corps work in the U.S. public domain.
+It appears solely beside the author's documented Marine Corps service on the
+experimental career timeline. It does not imply Marine Corps endorsement.
+The official government seal is not used. The Built Signal identity is unchanged.

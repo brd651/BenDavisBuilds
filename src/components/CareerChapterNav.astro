@@ -14,10 +14,17 @@ const { stages } = Astro.props;
     const links = [...nav.querySelectorAll<HTMLAnchorElement>('ol a')];
     const chapters = links.map(link => document.getElementById(link.hash.slice(1))!);
     if (chapters.some(chapter => !chapter)) return;
+    const region = nav.closest<HTMLElement>('[data-career-editorial]')!;
+    const floating = matchMedia('(min-width: 1360px)');
+    nav.classList.add('is-enhanced');
     let frame = 0;
     let active = -1;
     const update = () => {
       frame = 0;
+      const bounds = region.getBoundingClientRect();
+      const visible = !floating.matches || (bounds.top < innerHeight * .72 && bounds.bottom > 120) || nav.contains(document.activeElement);
+      nav.classList.toggle('is-visible', visible);
+      nav.inert = !visible;
       // Read all seven positions before changing the index; chapter layout stays stable.
       const positions = chapters.map(chapter => {
         const marker = chapter.querySelector('.milestone')!.getBoundingClientRect();
@@ -35,9 +42,11 @@ const { stages } = Astro.props;
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
-    const region = nav.closest('[data-career-editorial]')!;
     region.addEventListener('toggle', schedule, true);
     if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(region);
+    floating.addEventListener('change', schedule);
+    nav.addEventListener('focusin', schedule);
+    nav.addEventListener('focusout', schedule);
     window.addEventListener('hashchange', schedule);
     window.addEventListener('pageshow', schedule);
     schedule();
@@ -45,7 +54,7 @@ const { stages } = Astro.props;
 </script>
 
 <style>
-  .chapter-index { position: sticky; top: 1.5rem; align-self: start; max-height: calc(100svh - 3rem); overflow-y: auto; scrollbar-width: thin; padding: .25rem .6rem .75rem .25rem; }
+  .chapter-index { position: relative; max-height: none; overflow-y: visible; margin-bottom: 3rem; scrollbar-width: thin; padding: .25rem .6rem .75rem .25rem; }
   .index-heading { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--bs-border); padding-top: 1rem; gap: 1rem; }
   .index-heading p { font-size: .625rem; margin: 0 0 1rem; }
   .index-heading > span { color: var(--bs-muted); font: .6875rem ui-monospace, monospace; }
@@ -58,11 +67,17 @@ const { stages } = Astro.props;
   ol a[aria-current] { color: var(--bs-text); border-color: var(--bs-accentText); background: var(--bs-surface); text-decoration: underline; text-underline-offset: .25em; }
   ol a[aria-current] .index-marker { visibility: visible; }
   .compare-link { display: block; margin-top: 1.75rem; padding: .5rem; border-top: 1px solid var(--bs-line); font-size: .75rem; color: var(--bs-muted); line-height: 1.7; }
-  @media (max-width: 1100px) {
+  @media (min-width: 1360px) {
+    .chapter-index.is-enhanced { position: fixed; left: calc(50% - 670px); top: 50%; transform: translateY(-50%); width: 160px; max-height: calc(100svh - 3rem); overflow-y: auto; z-index: 5; margin: 0; padding-right: .5rem; background: var(--bs-page); visibility: hidden; opacity: 0; transition: opacity .2s ease; }
+    .chapter-index.is-enhanced.is-visible { visibility: visible; opacity: 1; }
+    .chapter-index ol a { padding-block: .7rem; }
+  }
+  @media (max-width: 1359px) {
     .chapter-index { position: static; max-height: none; overflow: visible; padding: 0; margin-bottom: 1.5rem; }
     ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
     .compare-link { display: none; }
   }
   @media (max-width: 600px) { ol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (prefers-reduced-motion: reduce) { .chapter-index.is-enhanced { transition: none; } }
   @media (forced-colors: active) { ol a[aria-current] { border-color: Highlight; } }
 </style>

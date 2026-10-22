@@ -18,6 +18,7 @@ const selections: Readonly<Record<string, { sentence?: string; detail?: string; 
 
 export const careerReflections: Record<string, CareerReflection> = {};
 export const editorialCareerStages: readonly CareerStage[] = careerStages.map(stage => {
+  if (stage.kind === 'service') stage = { ...stage, logo: { src: '/about/organizations/usmc-ega.svg', width: 400, height: 440, displayWidth: 124 } };
   const selection = selections[stage.id];
   if (!selection) throw new Error(`Missing editorial selection for ${stage.id}`);
   if (selection.sentence) {

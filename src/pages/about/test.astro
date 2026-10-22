@@ -9,14 +9,14 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   <article class="about-editorial-test">
     <div class="experiment-notice"><p><span>Design test</span> About / Career timeline</p><a href="/about/">View the current About page <span aria-hidden="true">↗</span></a></div>
     <header class="editorial-heading">
-      <div class="heading-copy"><p class="eyebrow">About / Career chapters</p><h1>A career built <span>through curiosity.</span></h1><p class="opening">I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p><p class="intro">I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p><a class="follow-link" href="#career">Follow the progression <span aria-hidden="true">↓</span></a></div>
+      <div class="heading-copy"><p class="eyebrow">About / Career chapters</p><h1>A career built <span>through curiosity.</span></h1><p class="opening">I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p><p class="intro">I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p></div>
       <CareerJourneyHero />
     </header>
     <section class="career-section" id="career" aria-labelledby="career-title" tabindex="-1">
       <header class="career-heading"><h2 id="career-title">The chapters.</h2><p>Over time, my career expanded from individual technical problem solving into helping teams solve problems at scale.</p></header>
       <div class="career-layout" data-career-editorial>
         <CareerChapterNav stages={editorialCareerStages} />
-        <div class="career-reading"><CareerTimeline stages={editorialCareerStages} reflections={careerReflections} /></div>
+        <div class="career-reading"><CareerTimeline stages={editorialCareerStages} reflections={careerReflections} motionControl={false} /></div>
       </div>
     </section>
     <footer class="editorial-closing"><p class="eyebrow">Same curiosity / What comes next</p><h2>Keep learning.<br />Keep building.</h2><p>Either way, the goal is the same... keep learning, keep building, and share what proves useful along the way.</p><nav aria-label="Explore more"><a href="/about/">About <span aria-hidden="true">↗</span></a><a href="/leadership/">Leadership <span aria-hidden="true">↗</span></a><a href="/mentorship/">Mentorship <span aria-hidden="true">↗</span></a></nav></footer>
@@ -36,19 +36,17 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   .heading-copy .eyebrow { font-size: .6875rem; margin-bottom: 1.75rem; }
   .opening { max-width: 47ch; font-size: clamp(1.125rem, 1.8vw, 1.35rem); line-height: 1.55; letter-spacing: -.02em; }
   .intro { color: var(--bs-muted); max-width: 58ch; font-size: 1rem; line-height: 1.8; }
-  .follow-link { display: inline-flex; align-items: center; gap: 1.5rem; padding-block: .5rem; font-size: .875rem; margin-top: .5rem; }
   .career-section { scroll-margin-top: 2rem; }
   .career-heading { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; border-block: 1px solid var(--bs-border); padding-block: 2rem; margin-bottom: 3rem; align-items: center; }
   .career-heading h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); margin: 0; max-width: 12ch; }
   .career-heading > p { max-width: 46ch; margin: 0; color: var(--bs-muted); font-size: 1.0625rem; line-height: 1.8; }
-  .career-layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); align-items: start; column-gap: 2.5rem; }
+  .career-layout { position: relative; max-width: 980px; margin-inline: auto; }
   .career-reading { min-width: 0; }
   .editorial-closing { border-top: 1px solid var(--bs-border); margin-top: 5rem; padding-top: 3rem; }
   .editorial-closing h2 { font-size: clamp(2.5rem, 5vw, 4rem); }
   .editorial-closing > p:last-of-type { max-width: 58ch; color: var(--bs-muted); font-size: 1.125rem; }
   .editorial-closing nav { margin-top: 2rem; }
   .editorial-closing nav a { display: inline-block; font-size: .875rem; padding: .5rem 0; margin-right: 2rem; }
-  @media (max-width: 1100px) { .career-layout { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 650px) {
     .editorial-heading { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-block: 2.5rem; }
     h1 { font-size: clamp(1.75rem, 8.5vw, 3rem); }

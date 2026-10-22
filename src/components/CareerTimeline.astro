@@ -3,15 +3,16 @@ import type { CareerStage } from '../data/career';
 import BrandMark from './BrandMark.astro';
 import CareerArtifact from './CareerArtifact.astro';
 import type { CareerReflection } from '../data/career-editorial';
-interface Props { stages: readonly CareerStage[]; reflections?: Readonly<Record<string, CareerReflection>> }
-const { stages, reflections } = Astro.props;
+interface Props { stages: readonly CareerStage[]; reflections?: Readonly<Record<string, CareerReflection>>; motionControl?: boolean }
+const { stages, reflections, motionControl = true } = Astro.props;
 ---
-<div class="career-timeline" data-career-timeline data-motion="false">
-  <div class="timeline-toolbar"><button type="button" data-timeline-motion hidden>Pause timeline motion</button></div>
+<div class:list={["career-timeline", { "editorial-timeline": reflections }]} data-career-timeline data-motion="false">
+  {motionControl && <div class="timeline-toolbar"><button type="button" data-timeline-motion hidden>Pause timeline motion</button></div>}
   <ol class="career-stages">
     {stages.map((stage, index) => <li id={stage.id} class:list={['career-stage', `stage-${stage.kind}`]} tabindex="-1">
       {index < stages.length - 1 && <svg class="timeline-connector" viewBox="-1 0 2 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V100" /><path class="connector-progress" d="M0 0 V100" pathLength="1" /></svg>}
       <div class="stage-identity">
+        {reflections && <span class="chapter-display" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>}
         <p class="stage-type">{stage.kind === 'service' ? 'Service' : stage.kind === 'education' ? 'Education' : stage.kind === 'personal' ? 'Ongoing personal project' : 'Career chapter'}</p>
         {stage.logo && <div class:list={['stage-logo', stage.logo.surface && `logo-${stage.logo.surface}`]} data-theme={stage.logo.surface === 'paper' ? 'light' : stage.logo.surface === 'navy' ? 'dark' : undefined} style={`--logo-width: ${stage.logo.displayWidth}px`}>
           <img class:list={[{ 'logo-dark': stage.logo.lightSrc }]} src={stage.logo.src} width={stage.logo.width} height={stage.logo.height} loading="lazy" decoding="async" alt={`${stage.organization} logo`} />
@@ -42,7 +43,7 @@ const { stages, reflections } = Astro.props;
 <script>
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   document.querySelectorAll<HTMLElement>('[data-career-timeline]').forEach(timeline => {
-    const button = timeline.querySelector<HTMLButtonElement>('[data-timeline-motion]')!;
+    const button = timeline.querySelector<HTMLButtonElement>('[data-timeline-motion]');
     let paused = false;
     let near = false;
     let generation = 0;
@@ -52,18 +53,20 @@ const { stages, reflections } = Astro.props;
       dispose?.();
       dispose = undefined;
       const supported = 'IntersectionObserver' in window && 'ResizeObserver' in window;
-      button.hidden = reducedMotion.matches || !supported;
-      button.textContent = paused ? 'Resume timeline motion' : 'Pause timeline motion';
+      if (button) {
+        button.hidden = reducedMotion.matches || !supported;
+        button.textContent = paused ? 'Resume timeline motion' : 'Pause timeline motion';
+      }
       if (!supported || reducedMotion.matches || paused || !near) return;
       try {
         const { mountCareerMotion } = await import('../scripts/career-motion');
         if (request === generation) dispose = mountCareerMotion(timeline);
       } catch {
         // A failed optional chunk must leave the complete static timeline usable.
-        button.hidden = true;
+        if (button) button.hidden = true;
       }
     };
-    button.addEventListener('click', () => { paused = !paused; void configure(); });
+    button?.addEventListener('click', () => { paused = !paused; void configure(); });
     reducedMotion.addEventListener('change', configure);
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver(entries => {
@@ -146,8 +149,25 @@ const { stages, reflections } = Astro.props;
   .carry-forward figcaption { margin: 0 0 .8rem; color: var(--chapter-muted, var(--bs-muted)); font-size: .6875rem; line-height: 1.5; text-transform: uppercase; letter-spacing: .13em; }
   .carry-forward blockquote { margin: 0; }
   .carry-forward blockquote p { font-family: ui-serif, Georgia, serif; font-size: clamp(1.125rem, 1.45vw, 1.3rem); line-height: 1.65; color: var(--bs-text); margin: 0; }
+  /* The experimental page gets an editorial treatment without changing /about/. */
+  .chapter-display { display: block; font-size: clamp(4rem, 7vw, 6rem); line-height: .9; letter-spacing: -.08em; font-weight: 650; color: var(--bs-muted); margin-bottom: 1.25rem; font-variant-numeric: tabular-nums; }
+  .editorial-timeline .career-stages { --stage-gap: 7rem; }
+  .editorial-timeline .stage-identity { position: relative; }
+  .editorial-timeline .stage-story { border-top: 1px solid var(--bs-border); padding-top: 1.5rem; }
+  .editorial-timeline .stage-story h3 { font-size: clamp(1.5rem, 2.2vw, 2rem); max-width: 22ch; }
+  .editorial-timeline .carry-forward { margin-top: 2rem; padding-top: 1.5rem; }
+  .editorial-timeline .carry-forward blockquote p { font-size: clamp(1.3rem, 2vw, 1.65rem); line-height: 1.5; letter-spacing: -.02em; }
+  .editorial-timeline .stage-service .stage-story { border-top: 3px solid var(--bs-scarlet); }
+  .editorial-timeline .stage-education .stage-story { padding: 1.75rem; background: var(--bs-surface); border-top: 1px solid var(--bs-brass); }
+  .editorial-timeline .career-stage:nth-child(5) .carry-forward { padding-left: 1.25rem; border-top: 0; border-left: 2px solid var(--bs-brass); }
+  .editorial-timeline .career-stage:nth-child(6) .carry-forward { padding-block: 1.5rem; border-bottom: 1px solid var(--bs-brass); }
+  .editorial-timeline .stage-personal .chapter-display { color: var(--bs-accentText); }
+  .editorial-timeline .stage-personal .stage-story { border-top: 2px solid var(--bs-brass); }
   @media (max-width: 800px) {
     .career-stages { --stage-gap: 3.5rem; }
+    .editorial-timeline .career-stages { --stage-gap: 4rem; }
+    .chapter-display { font-size: 3.5rem; }
+    .editorial-timeline .stage-education .stage-story { padding: 1.25rem; }
     [data-motion="true"] .stage-story h3, [data-motion="true"] .stage-organization, [data-motion="true"] .stage-logo { transform: none; }
     .career-stage { grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: 1.25rem; row-gap: 1.1rem; }
     .timeline-connector { left: calc(1.375rem - 1px); top: 1.375rem; }

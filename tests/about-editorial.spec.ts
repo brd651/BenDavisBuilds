@@ -17,6 +17,10 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://bendavisbuilds.com/about/test/');
     await expect(page.getByRole('link', { name: 'View the current About page' })).toHaveAttribute('href', '/about/');
     await expect(page.locator('.career-stage')).toHaveCount(7);
+    await expect(page.getByRole('link', { name: 'Follow the progression' })).toHaveCount(0);
+    await expect(page.locator('[data-timeline-motion]')).toHaveCount(0);
+    await expect(page.locator('.chapter-display')).toHaveCount(7);
+    await expect(page.locator('#marine-corps img')).toHaveAttribute('src', '/about/organizations/usmc-ega.svg');
     await expect(page.locator('.carry-forward')).toHaveCount(7);
     await expect(page.locator('.career-artifact')).toHaveCount(3);
     await expect(page.locator('.career-stage details')).toHaveCount(3);
@@ -45,36 +49,41 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
   });
 }
 
-for (const theme of ['dark', 'light']) test(`About editorial sticky index, anchors, wave and theme ${theme}`, async ({ page }) => {
+for (const theme of ['dark', 'light']) test(`About editorial floating index, anchors, wave and theme ${theme}`, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(t => localStorage.setItem('built-signal-theme', t), theme);
   await page.goto('/about/test/');
   const nav = page.getByRole('navigation', { name: 'Career chapters', exact: true });
-  await page.keyboard.press('Tab');
+  await expect(nav).toBeHidden();
+  await page.locator('#marine-corps').scrollIntoViewIfNeeded();
+  await expect(nav).toBeVisible();
   await nav.getByRole('link', { name: '03 SonicWall', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#sonicwall')).toBeFocused();
   await expect(nav.locator('a[aria-current="location"]')).toHaveAttribute('href', '#sonicwall');
-  expect(await nav.evaluate(el => getComputedStyle(el).position)).toBe('sticky');
+  expect(await nav.evaluate(el => getComputedStyle(el).position)).toBe('fixed');
   await page.locator('#palo-alto-networks').scrollIntoViewIfNeeded();
   await expect(nav.locator('a[aria-current="location"]')).toHaveAttribute('href', '#palo-alto-networks');
   const sticky = await nav.boundingBox();
   expect(sticky!.y).toBeGreaterThanOrEqual(0);
-  expect(sticky!.y).toBeLessThan(30);
+  expect(sticky!.y + sticky!.height).toBeLessThan(900);
+  const reading = await page.locator('.career-reading').boundingBox();
+  expect(sticky!.x + sticky!.width).toBeLessThan(reading!.x);
   await expect(page.locator('[data-career-timeline]')).toHaveAttribute('data-motion', 'true');
   const transforms = await page.locator('#palo-alto-networks').evaluate(stage => ['.milestone', '.stage-identity', '.stage-story'].map(selector => {
     const matrix = new DOMMatrix(getComputedStyle(stage.querySelector(selector)!).transform);
     return { x: matrix.m41, y: matrix.m42 };
   }));
   expect(transforms.every(part => Math.abs(part.x) < .01 && Math.abs(part.y - transforms[0].y) < .01)).toBe(true);
-  await page.getByRole('button', { name: 'Pause timeline motion' }).click();
-  await expect(page.locator('[data-career-timeline]')).toHaveAttribute('data-motion', 'false');
+  await expect(page.getByRole('button', { name: 'Pause timeline motion' })).toHaveCount(0);
   await chooseTheme(page, theme === 'dark' ? 'light' : 'dark');
   await chooseTheme(page, 'system');
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.locator('[data-timeline-motion]')).toBeHidden();
+  await expect(page.locator('[data-career-timeline]')).toHaveAttribute('data-motion', 'false');
+  await page.locator('.editorial-heading h1').scrollIntoViewIfNeeded();
+  await expect(nav).toBeHidden();
 });
 
 for (const javaScriptEnabled of [false, true]) test(`About editorial reflow at 320px without required JS (${javaScriptEnabled})`, async ({ browser, baseURL }) => {
@@ -101,4 +110,25 @@ test('Design experiment stays out of discovery and canonical About keeps its ori
   await expect(page.locator('h1')).toHaveText('About Ben Davis.');
   await expect(page.locator('.carry-forward, .career-artifact, .chapter-index')).toHaveCount(0);
   for (const stage of careerStages) await expect(page.locator(`#${stage.id} .stage-story > p`)).toHaveText(stage.summary);
+});
+
+
+test('Flowing-time hero settles at rest and honors reduced motion', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/about/test/');
+  const paths = page.locator('.flow-highlights path');
+  await expect(paths).toHaveCount(3);
+  const styles = await paths.evaluateAll(elements => elements.map(el => {
+    const style = getComputedStyle(el);
+    return { iterations: style.animationIterationCount, duration: parseFloat(style.animationDuration), delay: parseFloat(style.animationDelay) };
+  }));
+  expect(styles.every(s => s.iterations === '1' && s.duration + s.delay < 5)).toBe(true);
+  await page.waitForTimeout(4600);
+  const before = await paths.evaluateAll(elements => elements.map(el => getComputedStyle(el).strokeDashoffset));
+  await page.waitForTimeout(150);
+  expect(await paths.evaluateAll(elements => elements.map(el => getComputedStyle(el).strokeDashoffset))).toEqual(before);
+  await page.evaluate(() => scrollBy(0, 120));
+  await expect.poll(() => paths.first().evaluate(el => getComputedStyle(el).strokeDashoffset)).not.toBe(before[0]);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await paths.evaluateAll(elements => elements.every(el => getComputedStyle(el).animationName === 'none'))).toBe(true);
 });

@@ -1,7 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { Picture } from 'astro:assets';
-import headshot from '../../assets/about/ben-davis-headshot.jpg';
+import CareerJourneyHero from '../../components/CareerJourneyHero.astro';
 import CareerTimeline from '../../components/CareerTimeline.astro';
 import CareerChapterNav from '../../components/CareerChapterNav.astro';
 import { editorialCareerStages, careerReflections } from '../../data/career-editorial';
@@ -10,11 +9,11 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   <article class="about-editorial-test">
     <div class="experiment-notice"><p><span>Design test</span> About / Career timeline</p><a href="/about/">View the current About page <span aria-hidden="true">↗</span></a></div>
     <header class="editorial-heading">
-      <div class="heading-copy"><p class="eyebrow">Service → Engineering → Leadership</p><h1>A career built<br />through curiosity.</h1><p class="opening">I have spent my career at the intersection of technology, leadership, and problem solving.</p><p class="intro">I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p><a class="follow-link" href="#career">Follow the progression <span aria-hidden="true">↓</span></a></div>
-      <figure class="portrait"><Picture src={headshot} alt="Professional portrait of Ben Davis" formats={['avif', 'webp']} widths={[240, 320, 480, 640]} sizes="(max-width: 650px) 200px, 260px" loading="eager" fetchpriority="high" /><figcaption>The person behind the work.</figcaption></figure>
+      <div class="heading-copy"><p class="eyebrow">About / Career chapters</p><h1>A career built <span>through curiosity.</span></h1><p class="opening">I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p><p class="intro">I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p><a class="follow-link" href="#career">Follow the progression <span aria-hidden="true">↓</span></a></div>
+      <CareerJourneyHero />
     </header>
     <section class="career-section" id="career" aria-labelledby="career-title" tabindex="-1">
-      <header class="career-heading"><h2 id="career-title">Curiosity comes first.</h2><p>I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p></header>
+      <header class="career-heading"><h2 id="career-title">The chapters.</h2><p>Over time, my career expanded from individual technical problem solving into helping teams solve problems at scale.</p></header>
       <div class="career-layout" data-career-editorial>
         <CareerChapterNav stages={editorialCareerStages} />
         <div class="career-reading"><CareerTimeline stages={editorialCareerStages} reflections={careerReflections} /></div>
@@ -31,19 +30,16 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   .experiment-notice p { margin: 0; }
   .experiment-notice p > span { display: inline-block; color: var(--bs-text); border-left: 3px solid var(--bs-scarlet); padding-left: .7rem; margin-right: 1rem; font-weight: 650; }
   .experiment-notice a { padding-block: .25rem; }
-  .editorial-heading { display: grid; grid-template-columns: minmax(0, 1fr) 260px; align-items: center; gap: clamp(2rem, 7vw, 6rem); padding-block: clamp(3rem, 7vw, 6rem); }
-  h1 { font-size: clamp(3rem, 5.8vw, 5rem); max-width: 16ch; line-height: 1.06; letter-spacing: -.055em; font-weight: 600; margin-bottom: 1.7rem; }
+  .editorial-heading { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, .9fr); align-items: center; gap: clamp(2rem, 4vw, 4rem); padding-block: clamp(2.5rem, 5vw, 4rem); }
+  h1 { font-size: clamp(2.75rem, 5.2vw, 4.5rem); max-width: 18ch; line-height: 1.06; letter-spacing: -.055em; font-weight: 600; margin-bottom: 1.7rem; }
+  h1 > span { display: block; }
   .heading-copy .eyebrow { font-size: .6875rem; margin-bottom: 1.75rem; }
-  .opening { max-width: 34ch; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.55; letter-spacing: -.02em; }
+  .opening { max-width: 47ch; font-size: clamp(1.125rem, 1.8vw, 1.35rem); line-height: 1.55; letter-spacing: -.02em; }
   .intro { color: var(--bs-muted); max-width: 58ch; font-size: 1rem; line-height: 1.8; }
   .follow-link { display: inline-flex; align-items: center; gap: 1.5rem; padding-block: .5rem; font-size: .875rem; margin-top: .5rem; }
-  .portrait { width: 260px; margin: 0; }
-  .portrait :global(picture) { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-bottom: 2px solid var(--bs-brass); }
-  .portrait :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
-  .portrait figcaption { margin: .8rem 0 0; font-size: .6875rem; color: var(--bs-muted); }
   .career-section { scroll-margin-top: 2rem; }
-  .career-heading { display: grid; grid-template-columns: 1fr 1.1fr; gap: 3rem; border-block: 1px solid var(--bs-border); padding-block: 2rem; margin-bottom: 3rem; align-items: center; }
-  .career-heading h2 { font-size: clamp(2rem, 3.5vw, 3rem); margin: 0; max-width: 12ch; }
+  .career-heading { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; border-block: 1px solid var(--bs-border); padding-block: 2rem; margin-bottom: 3rem; align-items: center; }
+  .career-heading h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); margin: 0; max-width: 12ch; }
   .career-heading > p { max-width: 46ch; margin: 0; color: var(--bs-muted); font-size: 1.0625rem; line-height: 1.8; }
   .career-layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); align-items: start; column-gap: 2.5rem; }
   .career-reading { min-width: 0; }
@@ -55,8 +51,7 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   @media (max-width: 1100px) { .career-layout { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 650px) {
     .editorial-heading { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-block: 2.5rem; }
-    h1 { font-size: clamp(2.5rem, 10vw, 3.75rem); }
-    .portrait { width: 200px; }
+    h1 { font-size: clamp(1.75rem, 8.5vw, 3rem); }
     .career-heading { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
     .career-heading h2 { max-width: none; }
   }

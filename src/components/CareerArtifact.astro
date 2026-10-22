@@ -38,15 +38,16 @@ const { kind, id } = Astro.props;
 
 <style>
   .career-artifact { margin: 2rem 0 0; padding: 1.15rem; text-align: left; border: 1px solid var(--bs-border); background: var(--bs-surface); }
-  .artifact-label { font-size: .625rem; text-transform: uppercase; letter-spacing: .12em; color: var(--chapter-muted, var(--bs-muted)); margin: 0 0 .75rem; }
+  .artifact-label { font-size: .6875rem; text-transform: uppercase; letter-spacing: .12em; color: var(--chapter-muted, var(--bs-muted)); margin: 0 0 .75rem; }
   svg { display: block; width: 100%; height: auto; overflow: visible; }
   svg path, svg rect, svg circle { fill: var(--bs-surface); stroke: var(--bs-border); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   svg .connector, svg .arrow, svg .terminal { stroke: var(--bs-accentText); fill: none; }
   svg .guide { stroke: var(--bs-line); stroke-width: 1; fill: none; }
   svg .register { stroke: var(--bs-brass); stroke-width: 1; fill: none; }
   svg .loop { stroke: var(--bs-brass); fill: none; stroke-dasharray: 3 4; }
-  .artifact-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin: -.25rem 0 0; padding: 0; list-style: none; color: var(--bs-text); font-size: .6875rem; line-height: 1.5; text-align: center; }
+  .artifact-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin: -.25rem 0 0; padding: 0; list-style: none; color: var(--bs-text); font-size: .75rem; line-height: 1.5; text-align: center; }
   figcaption { margin: 1rem 0 0; color: var(--chapter-muted, var(--bs-muted)); font-size: .75rem; line-height: 1.65; }
+  .automation { background: var(--bs-page); border: 0; border-block: 1px solid var(--bs-line); padding-inline: .25rem; }
   .archive { border-left: 2px solid var(--bs-brass); background: var(--bs-page); padding: 1.5rem; }
   .archive-name { font-size: clamp(2.5rem, 4vw, 3.5rem); line-height: 1; letter-spacing: -.07em; font-weight: 650; margin: 1.25rem 0 1rem; }
   .archive-name > span:first-child { font-weight: 350; }

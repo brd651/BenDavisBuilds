@@ -1,0 +1,45 @@
+---
+// Decorative, theme-aware vector artwork. It depicts no real terrain or topology.
+---
+<figure class="journey-art" aria-hidden="true">
+  <svg viewBox="0 0 560 420" fill="none">
+    <defs>
+      <linearGradient id="journey-ground" x1="80" y1="370" x2="450" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="var(--bs-surface)" /><stop offset="1" stop-color="var(--bs-page)" /></linearGradient>
+      <linearGradient id="journey-ink" x1="50" y1="340" x2="490" y2="80" gradientUnits="userSpaceOnUse"><stop stop-color="var(--bs-border)" stop-opacity=".15" /><stop offset=".55" stop-color="var(--bs-border)" stop-opacity=".65" /><stop offset="1" stop-color="var(--bs-border)" stop-opacity=".2" /></linearGradient>
+    </defs>
+    <path class="ground" d="M37 305C86 281 105 235 151 238C196 241 205 274 244 246C284 218 266 162 309 158C357 153 357 196 397 164C429 139 417 85 464 74L523 110L521 323L291 394Z" />
+    <g class="contours">
+      <path d="M42 317C91 298 116 259 155 261C193 264 218 290 252 266C287 242 292 192 322 186C356 179 373 218 410 187C447 156 436 120 484 106" />
+      <path d="M54 329C104 310 126 282 162 283C202 284 224 312 264 286C299 263 310 223 338 214C369 205 391 235 424 209C455 184 461 146 502 134" />
+      <path d="M72 340C116 326 138 303 174 305C211 308 239 330 276 308C312 287 330 254 356 245C386 234 409 253 440 231C469 210 486 174 517 166" />
+      <path d="M93 351C139 342 151 324 187 327C222 331 250 346 289 328C323 313 346 284 375 275C403 266 428 270 455 253C483 235 499 212 522 203" />
+      <path d="M116 362C160 356 179 346 208 349C239 353 269 362 303 347C343 330 363 311 395 303C431 294 441 292 469 276C491 264 508 247 522 240" />
+      <path d="M150 373C190 367 210 366 239 369C273 373 292 371 324 358C355 345 381 337 413 328C454 316 477 301 518 280" />
+      <path d="M199 384C253 380 276 387 318 375C352 365 383 359 420 347C460 334 482 321 508 310" />
+      <path d="M67 292C108 273 121 216 159 213C193 210 207 250 239 222C269 195 249 142 292 131C339 119 349 169 384 139C417 111 399 73 443 57" />
+      <path d="M105 254C122 236 127 197 157 187C187 176 207 220 230 196C250 174 235 120 275 105C314 90 342 141 372 114C395 93 388 61 420 45" />
+      <path d="M134 214C149 181 162 157 183 166C202 174 214 192 225 173C237 151 232 101 262 84C293 66 323 104 349 91C375 78 372 54 397 40" />
+      <path d="M241 139C245 115 248 85 269 74C290 63 309 80 331 76C352 72 357 55 374 45" />
+    </g>
+    <path class="route-under" d="M80 326C137 329 128 272 182 281C235 290 229 249 266 249C317 249 292 181 343 188C399 196 382 139 421 140C454 140 439 104 476 89" />
+    <path class="route" d="M80 326C137 329 128 272 182 281C235 290 229 249 266 249C317 249 292 181 343 188C399 196 382 139 421 140C454 140 439 104 476 89" />
+    <path class="route-cap" d="M467 86L477 89 473 99 M74 320L86 333" />
+    <path class="registration" d="M29 277V262H44 M502 65H517V80 M293 394H316" />
+  </svg>
+  <figcaption><span>Service</span><span>Engineering</span><span>Leadership</span></figcaption>
+</figure>
+
+<style>
+  .journey-art { margin: 0; min-width: 0; padding-top: 1rem; background: radial-gradient(ellipse at 55% 60%, color-mix(in srgb, var(--bs-brass) 7%, transparent), transparent 70%); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .ground { fill: url(#journey-ground); fill-opacity: .8; }
+  .contours { stroke: url(#journey-ink); stroke-width: 1; }
+  .route-under { stroke: var(--bs-page); stroke-width: 7; }
+  .route, .route-cap { stroke: var(--bs-accentText); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .registration { stroke: var(--bs-brass); stroke-width: 1; opacity: .55; }
+  figcaption { display: flex; justify-content: space-between; gap: .75rem; margin: .6rem 1.5rem 0; padding-top: 1rem; border-top: 1px solid var(--bs-line); font-size: .625rem; text-transform: uppercase; letter-spacing: .12em; color: var(--bs-muted); }
+  figcaption span { white-space: nowrap; }
+  @media (max-width: 900px) { figcaption { flex-direction: column; align-items: flex-start; gap: .35rem; } }
+  @media (max-width: 650px) { .journey-art { display: none; } }
+  @media (forced-colors: active) { .contours, .route, .route-cap { stroke: CanvasText; } .ground { fill: Canvas; } }
+</style>

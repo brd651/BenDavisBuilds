@@ -52,6 +52,7 @@ const { stages } = Astro.props;
   ol { padding: 0; margin: 0; list-style: none; }
   ol a { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) .75rem; gap: .5rem; align-items: baseline; padding: .85rem .4rem .85rem .5rem; border-left: 2px solid transparent; color: var(--bs-muted); font-size: .75rem; line-height: 1.5; text-decoration: none; }
   ol a:hover { color: var(--bs-text); text-decoration: underline; text-underline-offset: .25em; }
+  ol a:focus-visible { outline-offset: -3px; }
   .index-number { font-family: ui-monospace, monospace; font-size: .625rem; }
   .index-marker { visibility: hidden; }
   ol a[aria-current] { color: var(--bs-text); border-color: var(--bs-accentText); background: var(--bs-surface); text-decoration: underline; text-underline-offset: .25em; }

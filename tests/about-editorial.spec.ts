@@ -12,7 +12,7 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     expect((await page.goto('/about/test/'))?.status()).toBe(200);
-    await expect(page.locator('h1')).toHaveText('A career builtthrough curiosity.');
+    await expect(page.locator('h1')).toHaveText('A career built through curiosity.');
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://bendavisbuilds.com/about/test/');
     await expect(page.getByRole('link', { name: 'View the current About page' })).toHaveAttribute('href', '/about/');
@@ -37,8 +37,10 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     expect(axe.violations, JSON.stringify(axe.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })))).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(await page.locator('article').innerText()).not.toMatch(/\u2014|Lorem ipsum|(?:19|20)\d{2}/);
-    const portrait = page.getByRole('img', { name: 'Professional portrait of Ben Davis' });
-    expect(await portrait.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0 && Number(image.getAttribute('width')) > 0 && Number(image.getAttribute('height')) > 0)).toBe(true);
+    await expect(page.getByRole('img', { name: 'Professional portrait of Ben Davis' })).toHaveCount(0);
+    await expect(page.locator('.editorial-heading img, .editorial-heading picture')).toHaveCount(0);
+    if (width > 650) await expect(page.locator('.journey-art')).toBeVisible();
+    else await expect(page.locator('.journey-art')).toBeHidden();
     expect(errors).toEqual([]);
   });
 }

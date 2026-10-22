@@ -20,7 +20,7 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     await expect(page.locator('.carry-forward')).toHaveCount(7);
     await expect(page.locator('.career-artifact')).toHaveCount(3);
     await expect(page.locator('.career-stage details')).toHaveCount(3);
-    await page.locator('details').evaluateAll(elements => elements.filter(el => el.closest('.career-stage')).forEach(el => el.open = true));
+    await page.locator('details').evaluateAll(elements => elements.forEach(el => { if (el instanceof HTMLDetailsElement && el.closest('.career-stage')) el.open = true; }));
     // Preserve every original prose word exactly once, even when relocated into a note.
     for (const stage of careerStages) {
       const expected = [stage.summary, ...(stage.expansion?.sections.map(section => section.body) ?? [])].join(' ');

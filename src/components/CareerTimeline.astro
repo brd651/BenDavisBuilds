@@ -4,10 +4,11 @@ import BrandMark from './BrandMark.astro';
 interface Props { stages: readonly CareerStage[] }
 const { stages } = Astro.props;
 ---
-<div class="career-timeline" data-career-timeline>
+<div class="career-timeline" data-career-timeline data-motion="false">
+  <div class="timeline-toolbar"><button type="button" data-timeline-motion hidden>Pause timeline motion</button></div>
   <ol class="career-stages">
     {stages.map((stage, index) => <li id={stage.id} class:list={['career-stage', `stage-${stage.kind}`]} tabindex="-1">
-      {index < stages.length - 1 && <svg class="timeline-connector" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true"><path d="M1 0 V100" /><path class="connector-progress" d="M1 0 V100" pathLength="1" /></svg>}
+      {index < stages.length - 1 && <svg class="timeline-connector" viewBox="-64 0 128 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V100" /><path class="connector-progress" d="M0 0 V100" pathLength="1" /></svg>}
       <div class="stage-identity">
         <p class="stage-type">{stage.kind === 'service' ? 'Service' : stage.kind === 'education' ? 'Education' : stage.kind === 'personal' ? 'Ongoing personal project' : 'Career chapter'}</p>
         {stage.logo && <div class:list={['stage-logo', stage.logo.surface && `logo-${stage.logo.surface}`]} data-theme={stage.logo.surface === 'paper' ? 'light' : stage.logo.surface === 'navy' ? 'dark' : undefined} style={`--logo-width: ${stage.logo.displayWidth}px`}>
@@ -37,52 +38,42 @@ const { stages } = Astro.props;
 <script>
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   document.querySelectorAll<HTMLElement>('[data-career-timeline]').forEach(timeline => {
-    const stages = [...timeline.querySelectorAll<HTMLElement>('.career-stage')];
-    let frame = 0;
-    let observer: IntersectionObserver | undefined;
-    let listening = false;
-    const update = () => {
-      frame = 0;
-      // Read geometry together before writing styles to avoid forced layout per segment.
-      const segments = stages.slice(0, -1).map(stage => {
-        const rail = stage.querySelector<SVGElement>('.timeline-connector')!;
-        const bounds = rail.getBoundingClientRect();
-        return { rail, offset: 1 - Math.max(0, Math.min(1, (innerHeight * .72 - bounds.top) / bounds.height)) };
-      });
-      segments.forEach(({ rail, offset }) => rail.style.setProperty('--line-offset', String(offset)));
+    const button = timeline.querySelector<HTMLButtonElement>('[data-timeline-motion]')!;
+    let paused = false;
+    let near = false;
+    let generation = 0;
+    let dispose: (() => void) | undefined;
+    const configure = async () => {
+      const request = ++generation;
+      dispose?.();
+      dispose = undefined;
+      const supported = 'IntersectionObserver' in window && 'ResizeObserver' in window;
+      button.hidden = reducedMotion.matches || !supported;
+      button.textContent = paused ? 'Resume timeline motion' : 'Pause timeline motion';
+      if (!supported || reducedMotion.matches || paused || !near) return;
+      try {
+        const { mountCareerMotion } = await import('../scripts/career-motion');
+        if (request === generation) dispose = mountCareerMotion(timeline);
+      } catch {
+        // A failed optional chunk must leave the complete static timeline usable.
+        button.hidden = true;
+      }
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
-    const configure = () => {
-      observer?.disconnect();
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      timeline.removeEventListener('toggle', schedule, true);
-      listening = false;
-      timeline.dataset.motion = 'false';
-      stages.forEach(stage => stage.classList.remove('is-seen'));
-      if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
-      timeline.dataset.motion = 'true';
-      observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-seen');
-            observer?.unobserve(entry.target);
-          }
-        });
-      }, { rootMargin: '0px 0px -8% 0px', threshold: .1 });
-      stages.forEach(stage => observer!.observe(stage));
-      window.addEventListener('scroll', schedule, { passive: true });
-      window.addEventListener('resize', schedule);
-      timeline.addEventListener('toggle', schedule, true);
-      listening = true;
-      schedule();
-    };
-    configure();
+    button.addEventListener('click', () => { paused = !paused; void configure(); });
     reducedMotion.addEventListener('change', configure);
-    // ResizeObserver keeps lines accurate when disclosures or text sizes change.
-    if ('ResizeObserver' in window) new ResizeObserver(() => { if (listening) schedule(); }).observe(timeline);
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          near = true;
+          observer.disconnect();
+          void configure();
+        }
+      }, { rootMargin: '400px' });
+      observer.observe(timeline);
+    }
+    window.addEventListener('pagehide', () => { ++generation; dispose?.(); dispose = undefined; });
+    window.addEventListener('pageshow', event => { if (event.persisted) void configure(); });
+    void configure();
   });
 </script>
 
@@ -90,7 +81,7 @@ const { stages } = Astro.props;
   .career-stages { --stage-gap: 4.5rem; padding: 0; margin: 0; list-style: none; }
   .career-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr); gap: 2rem; align-items: start; padding-bottom: var(--stage-gap); scroll-margin-top: 2.5rem; }
   .career-stage:last-child { padding-bottom: 0; }
-  .timeline-connector { position: absolute; left: calc(50% - 1px); top: 2rem; width: 2px; height: 100%; overflow: visible; pointer-events: none; }
+  .timeline-connector { position: absolute; left: calc(50% - 64px); top: 2rem; width: 128px; height: 100%; overflow: hidden; pointer-events: none; }
   .timeline-connector path { stroke: var(--bs-border); stroke-width: 2; fill: none; vector-effect: non-scaling-stroke; }
   .timeline-connector .connector-progress { stroke: var(--bs-accentText); }
   [data-motion="true"] .connector-progress { stroke-dasharray: 1; stroke-dashoffset: var(--line-offset, 1); }
@@ -129,13 +120,22 @@ const { stages } = Astro.props;
   .career-stage:nth-child(even) .stage-logo { margin-inline: 0 auto; }
   .career-stage:nth-child(even) .stage-brand { justify-content: start; }
   .stage-detail p { margin: 0; }
-  [data-motion="true"] .is-seen .milestone { border-color: var(--bs-accentText); background: var(--bs-surface); transition: border-color .45s ease; }
-  [data-motion="true"] .is-seen .stage-identity, [data-motion="true"] .is-seen .stage-story { animation: chapter-arrive .6s ease both; }
-  @keyframes chapter-arrive { from { opacity: .78; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .timeline-toolbar { display: flex; justify-content: end; min-height: 2.75rem; margin-bottom: 2rem; }
+  [data-timeline-motion] { font: inherit; font-size: .8125rem; color: var(--bs-muted); background: transparent; border: 1px solid var(--bs-border); border-radius: .25rem; padding: .65rem .9rem; cursor: pointer; }
+  [data-timeline-motion]:hover { color: var(--bs-text); border-color: var(--bs-accentText); }
+  [data-motion="true"] .stage-identity, [data-motion="true"] .stage-story { transform: translateY(calc(-6px * var(--chapter-depth, 0))) scale(calc(1 + .018 * var(--chapter-depth, 0))); }
+  .stage-identity { transform-origin: right top; }
+  .stage-story { transform-origin: left top; }
+  .career-stage:nth-child(even) .stage-identity { transform-origin: left top; }
+  .career-stage:nth-child(even) .stage-story { transform-origin: right top; }
+  [data-motion="true"] .milestone { transform: translateX(var(--wave-x, 0px)) scale(calc(1 + .1 * var(--chapter-depth, 0))); }
+  [data-motion="true"] .is-seen .milestone { border-color: var(--bs-accentText); }
+  [data-motion="true"] .is-current .milestone { background: var(--bs-surface); outline: 1px solid var(--bs-accentText); outline-offset: 5px; }
   @media (max-width: 800px) {
     .career-stages { --stage-gap: 3.5rem; }
+    [data-motion="true"] .stage-identity, [data-motion="true"] .stage-story { transform: none; }
     .career-stage { grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: 1.25rem; row-gap: 1.1rem; }
-    .timeline-connector { left: calc(1.375rem - 1px); top: 1.375rem; }
+    .timeline-connector { left: calc(1.375rem - 16px); top: 1.375rem; width: 32px; }
     .milestone { grid-column: 1; grid-row: 1; width: 2.75rem; height: 2.75rem; font-size: .6875rem; }
     .stage-identity, .career-stage:nth-child(even) .stage-identity { grid-column: 2; grid-row: 1; text-align: left; }
     .stage-story, .career-stage:nth-child(even) .stage-story { grid-column: 2; grid-row: 2; }

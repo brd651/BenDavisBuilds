@@ -59,8 +59,8 @@ test('About scroll reveals lines and milestones; changing motion preference comp
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/about/');
   const timeline = page.locator('[data-career-timeline]');
-  await expect(timeline).toHaveAttribute('data-motion', 'true');
   await page.locator('#marine-corps').scrollIntoViewIfNeeded();
+  await expect(timeline).toHaveAttribute('data-motion', 'true');
   await expect(page.locator('#marine-corps')).toHaveClass(/is-seen/);
   await expect.poll(() => page.locator('.timeline-connector').first().evaluate(el => Number(getComputedStyle(el).getPropertyValue('--line-offset')))).toBeLessThan(1);
   await page.locator('#western-nrg').scrollIntoViewIfNeeded();

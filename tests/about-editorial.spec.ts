@@ -61,7 +61,7 @@ for (const theme of ['dark', 'light']) test(`About editorial floating index, anc
   await page.keyboard.press('Enter');
   await expect(page.locator('#sonicwall')).toBeFocused();
   await expect(nav.locator('a[aria-current="location"]')).toHaveAttribute('href', '#sonicwall');
-  expect(await nav.evaluate(el => getComputedStyle(el).position)).toBe('fixed');
+  expect(await nav.evaluate(el => getComputedStyle(el).position)).toBe('sticky');
   await page.locator('#palo-alto-networks').scrollIntoViewIfNeeded();
   await expect(nav.locator('a[aria-current="location"]')).toHaveAttribute('href', '#palo-alto-networks');
   const sticky = await nav.boundingBox();
@@ -131,4 +131,23 @@ test('Flowing-time hero settles at rest and honors reduced motion', async ({ pag
   await expect.poll(() => paths.first().evaluate(el => getComputedStyle(el).strokeDashoffset)).not.toBe(before[0]);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(await paths.evaluateAll(elements => elements.every(el => getComputedStyle(el).animationName === 'none'))).toBe(true);
+});
+
+
+for (const width of [1440, 1920, 3840]) test(`Chapter menu stays inside timeline at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: width === 3840 ? 2160 : 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/about/test/');
+  const nav = page.locator('.chapter-index');
+  const region = page.locator('[data-career-editorial]');
+  const bounds = await region.evaluate(el => ({ top: el.getBoundingClientRect().top + scrollY, bottom: el.getBoundingClientRect().bottom + scrollY }));
+  for (const y of [bounds.top - (width === 3840 ? 1200 : 500), bounds.top + 500, bounds.bottom - 250]) {
+    await page.evaluate(y => scrollTo(0, y), y);
+    await expect(nav).toBeVisible();
+    const menu = (await nav.boundingBox())!;
+    const timeline = (await region.boundingBox())!;
+    expect(menu.y).toBeGreaterThanOrEqual(timeline.y - 1);
+    expect(menu.y + menu.height).toBeLessThanOrEqual(timeline.y + timeline.height + 1);
+    expect(menu.x + menu.width).toBeLessThan(timeline.x);
+  }
 });

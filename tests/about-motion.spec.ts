@@ -15,9 +15,21 @@ for (const theme of ['dark', 'light']) for (const width of [390, 768, 1440, 3840
     await expect(page.locator('#sonicwall')).toHaveClass(/is-current/);
     const path = page.locator('.timeline-connector path').first();
     const before = await path.getAttribute('d');
+    const displacement = () => page.locator('.career-stage').evaluateAll(stages => stages.map(stage => ['.milestone', '.stage-identity', '.stage-story'].map(selector => {
+      const matrix = new DOMMatrix(getComputedStyle(stage.querySelector(selector)!).transform);
+      return { x: matrix.m41, y: matrix.m42 };
+    })));
+    const positionsBefore = await displacement();
     await page.evaluate(() => scrollBy(0, 100));
     await expect.poll(() => path.getAttribute('d')).not.toBe(before);
-    // Every curved segment meets both moving markers, including on narrow screens.
+    const positionsAfter = await displacement();
+    expect(positionsAfter.some((parts, index) => Math.abs(parts[0].y - positionsBefore[index][0].y) > 1)).toBe(true);
+    for (const parts of positionsAfter) {
+      expect(parts.every(part => Math.abs(part.x) < .01)).toBe(true);
+      expect(Math.abs(parts[0].y - parts[1].y)).toBeLessThan(.01);
+      expect(Math.abs(parts[0].y - parts[2].y)).toBeLessThan(.01);
+    }
+    // Every straight connector meets both vertically moving markers, including on narrow screens.
     const joins = await timeline.evaluate(root => {
       const stages = [...root.querySelectorAll('.career-stage')];
       return stages.slice(0, -1).map((stage, i) => {
@@ -32,12 +44,14 @@ for (const theme of ['dark', 'light']) for (const width of [390, 768, 1440, 3840
     });
     expect(joins.flat().every(distance => distance < 1)).toBe(true);
     await page.locator('#sonicwall summary').hover();
-    await expect.poll(() => page.locator('#sophos').evaluate(el => Number(getComputedStyle(el).opacity))).toBeCloseTo(.88, 2);
+    await expect.poll(() => page.locator('#sophos .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBeCloseTo(.68, 2);
+    await expect.poll(() => page.locator('#sophos .stage-identity').evaluate(el => Number(getComputedStyle(el).opacity))).toBeCloseTo(.68, 2);
     await expect(page.locator('#sonicwall')).toHaveClass(/is-current/);
+    await page.keyboard.press('Tab');
     await page.locator('#sonicwall summary').focus();
     await page.locator('#sophos .stage-organization').hover();
     await expect(page.locator('#sonicwall')).toHaveClass(/is-current/);
-    await expect.poll(() => page.locator('#sonicwall').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
+    await expect.poll(() => page.locator('#sonicwall .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations, JSON.stringify(axe.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })))).toEqual([]);
     const pause = page.getByRole('button', { name: 'Pause timeline motion' });
@@ -45,7 +59,7 @@ for (const theme of ['dark', 'light']) for (const width of [390, 768, 1440, 3840
     await expect(timeline).toHaveAttribute('data-motion', 'false');
     await expect(page.getByRole('button', { name: 'Resume timeline motion' })).toBeVisible();
     await expect(path).toHaveAttribute('d', 'M0 0 V100');
-    await expect.poll(() => page.locator('#sophos').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
+    await expect.poll(() => page.locator('#sophos .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
     await page.getByRole('button', { name: 'Resume timeline motion' }).click();
     await expect(timeline).toHaveAttribute('data-motion', 'true');
     await page.mouse.move(0, 0);
@@ -110,3 +124,30 @@ test('Wave stops rewriting paths outside the viewport and resumes on return', as
   await page.locator('#palo-alto-networks').scrollIntoViewIfNeeded();
   await expect.poll(() => path.getAttribute('d')).not.toBe(before);
 });
+
+for (const theme of ['dark', 'light']) for (const fallback of ['reduced-motion', 'no-javascript', 'missing-observer']) {
+  test(`Hover visibly fades peers with ${fallback} in ${theme}`, async ({ browser, baseURL }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      javaScriptEnabled: fallback !== 'no-javascript',
+      reducedMotion: fallback === 'reduced-motion' ? 'reduce' : 'no-preference',
+    });
+    const page = await context.newPage();
+    if (fallback === 'missing-observer') await page.addInitScript(() => { Reflect.deleteProperty(window, 'ResizeObserver'); });
+    await page.goto(`${baseURL}/about/`);
+    // This also sets a theme without relying on the unavailable site scripts.
+    await page.locator('html').evaluate((root, theme) => root.setAttribute('data-theme', theme), theme);
+    await page.locator('#sonicwall .stage-story h3').hover();
+    await expect.poll(() => page.locator('#sophos .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBeCloseTo(.68, 2);
+    await expect.poll(() => page.locator('#sophos .stage-identity').evaluate(el => Number(getComputedStyle(el).opacity))).toBeCloseTo(.68, 2);
+    await expect.poll(() => page.locator('#sonicwall .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
+    // Axe itself needs JavaScript; the no-JS case verifies native CSS state directly.
+    if (fallback !== 'no-javascript') {
+      const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+      expect(axe.violations, JSON.stringify(axe.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })))).toEqual([]);
+    }
+    await page.mouse.move(0, 0);
+    await expect.poll(() => page.locator('#sophos .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
+    await context.close();
+  });
+}

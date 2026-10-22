@@ -8,7 +8,7 @@ const { stages } = Astro.props;
   <div class="timeline-toolbar"><button type="button" data-timeline-motion hidden>Pause timeline motion</button></div>
   <ol class="career-stages">
     {stages.map((stage, index) => <li id={stage.id} class:list={['career-stage', `stage-${stage.kind}`]} tabindex="-1">
-      {index < stages.length - 1 && <svg class="timeline-connector" viewBox="-64 0 128 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V100" /><path class="connector-progress" d="M0 0 V100" pathLength="1" /></svg>}
+      {index < stages.length - 1 && <svg class="timeline-connector" viewBox="-1 0 2 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V100" /><path class="connector-progress" d="M0 0 V100" pathLength="1" /></svg>}
       <div class="stage-identity">
         <p class="stage-type">{stage.kind === 'service' ? 'Service' : stage.kind === 'education' ? 'Education' : stage.kind === 'personal' ? 'Ongoing personal project' : 'Career chapter'}</p>
         {stage.logo && <div class:list={['stage-logo', stage.logo.surface && `logo-${stage.logo.surface}`]} data-theme={stage.logo.surface === 'paper' ? 'light' : stage.logo.surface === 'navy' ? 'dark' : undefined} style={`--logo-width: ${stage.logo.displayWidth}px`}>
@@ -19,7 +19,7 @@ const { stages } = Astro.props;
         <p class="stage-organization">{stage.organization}</p>
         <p class="stage-theme">{stage.theme}</p>
       </div>
-      <span class="milestone" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+      <span class="milestone" aria-hidden="true"><span class="milestone-number">{String(index + 1).padStart(2, '0')}</span></span>
       <div class="stage-story">
         <h3>{stage.role}</h3>
         <p>{stage.summary}</p>
@@ -81,12 +81,12 @@ const { stages } = Astro.props;
   .career-stages { --stage-gap: 4.5rem; padding: 0; margin: 0; list-style: none; }
   .career-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 4rem minmax(0, 1fr); gap: 2rem; align-items: start; padding-bottom: var(--stage-gap); scroll-margin-top: 2.5rem; }
   .career-stage:last-child { padding-bottom: 0; }
-  .timeline-connector { position: absolute; left: calc(50% - 64px); top: 2rem; width: 128px; height: 100%; overflow: hidden; pointer-events: none; }
+  .timeline-connector { position: absolute; left: calc(50% - 1px); top: 2rem; width: 2px; height: 100%; overflow: hidden; pointer-events: none; }
   .timeline-connector path { stroke: var(--bs-border); stroke-width: 2; fill: none; vector-effect: non-scaling-stroke; }
   .timeline-connector .connector-progress { stroke: var(--bs-accentText); }
   [data-motion="true"] .connector-progress { stroke-dasharray: 1; stroke-dashoffset: var(--line-offset, 1); }
   .stage-identity { grid-column: 1; text-align: right; padding-top: .25rem; }
-  .stage-type { font-size: .6875rem; text-transform: uppercase; letter-spacing: .15em; color: var(--bs-muted); margin-bottom: .7rem; }
+  .stage-type { font-size: .6875rem; text-transform: uppercase; letter-spacing: .15em; color: var(--chapter-muted, var(--bs-muted)); margin-bottom: .7rem; }
   .stage-organization { font-size: clamp(1.65rem, 3vw, 2.65rem); font-weight: 650; line-height: 1.1; letter-spacing: -.045em; margin-bottom: .9rem; }
   .stage-logo { width: min(100%, var(--logo-width)); margin: .9rem 0 1rem auto; }
   .stage-logo img { display: block; width: 100%; height: auto; object-fit: contain; }
@@ -97,11 +97,11 @@ const { stages } = Astro.props;
   .stage-identity:has(.stage-logo) .stage-organization { font-size: 1.15rem; line-height: 1.4; letter-spacing: -.01em; }
   .stage-brand { display: flex; justify-content: end; margin-bottom: 1rem; }
   .stage-brand :global(.timeline-brand-mark) { width: 4.5rem; height: auto; }
-  .stage-theme { font-size: .875rem; color: var(--bs-muted); margin: 0; }
+  .stage-theme { font-size: .875rem; color: var(--chapter-muted, var(--bs-muted)); margin: 0; }
   .milestone { grid-column: 2; display: grid; place-items: center; position: relative; width: 4rem; height: 4rem; border: 2px solid var(--bs-border); border-radius: 50%; background: var(--bs-page); font-size: .8125rem; font-weight: 650; font-variant-numeric: tabular-nums; z-index: 1; }
   .stage-story { grid-column: 3; padding-top: .2rem; }
   .stage-story h3 { font-size: clamp(1.3rem, 2vw, 1.65rem); line-height: 1.25; letter-spacing: -.025em; margin-bottom: 1rem; max-width: 25ch; }
-  .stage-story p { font-size: 1.0625rem; line-height: 1.8; color: var(--bs-muted); margin-bottom: 1rem; }
+  .stage-story p { font-size: 1.0625rem; line-height: 1.8; color: var(--chapter-muted, var(--bs-muted)); margin-bottom: 1rem; }
   .career-stage:nth-child(even) .stage-identity { grid-column: 3; text-align: left; grid-row: 1; }
   .career-stage:nth-child(even) .milestone { grid-row: 1; }
   .career-stage:nth-child(even) .stage-story { grid-column: 1; grid-row: 1; }
@@ -123,19 +123,26 @@ const { stages } = Astro.props;
   .timeline-toolbar { display: flex; justify-content: end; min-height: 2.75rem; margin-bottom: 2rem; }
   [data-timeline-motion] { font: inherit; font-size: .8125rem; color: var(--bs-muted); background: transparent; border: 1px solid var(--bs-border); border-radius: .25rem; padding: .65rem .9rem; cursor: pointer; }
   [data-timeline-motion]:hover { color: var(--bs-text); border-color: var(--bs-accentText); }
-  [data-motion="true"] .stage-identity, [data-motion="true"] .stage-story { transform: translateY(calc(-6px * var(--chapter-depth, 0))) scale(calc(1 + .018 * var(--chapter-depth, 0))); }
+  [data-motion="true"] .stage-identity, [data-motion="true"] .stage-story { transform: translateY(var(--wave-y, 0px)); }
+  [data-motion="true"] .stage-story h3, [data-motion="true"] .stage-organization, [data-motion="true"] .stage-logo { transform: scale(calc(1 + .018 * var(--chapter-depth, 0))); transform-origin: inherit; }
   .stage-identity { transform-origin: right top; }
   .stage-story { transform-origin: left top; }
   .career-stage:nth-child(even) .stage-identity { transform-origin: left top; }
   .career-stage:nth-child(even) .stage-story { transform-origin: right top; }
-  [data-motion="true"] .milestone { transform: translateX(var(--wave-x, 0px)) scale(calc(1 + .1 * var(--chapter-depth, 0))); }
+  [data-motion="true"] .milestone { transform: translateY(var(--wave-y, 0px)) scale(calc(1 + .1 * var(--chapter-depth, 0))); }
   [data-motion="true"] .is-seen .milestone { border-color: var(--bs-accentText); }
   [data-motion="true"] .is-current .milestone { background: var(--bs-surface); outline: 1px solid var(--bs-accentText); outline-offset: 5px; }
+  /* Reading emphasis is native CSS, independent of motion, JavaScript or observers. */
+  .stage-identity, .stage-story, .milestone-number, .timeline-connector { opacity: var(--chapter-opacity, 1); transition: opacity .22s ease; }
+  .career-stages:has(:focus-visible) > .career-stage:not(:focus-within) { --chapter-opacity: .68; --chapter-muted: var(--bs-text); }
+  @media (any-hover: hover) {
+    .career-stages:has(> .career-stage:hover):not(:has(:focus-visible)) > .career-stage:not(:hover) { --chapter-opacity: .68; --chapter-muted: var(--bs-text); }
+  }
   @media (max-width: 800px) {
     .career-stages { --stage-gap: 3.5rem; }
-    [data-motion="true"] .stage-identity, [data-motion="true"] .stage-story { transform: none; }
+    [data-motion="true"] .stage-story h3, [data-motion="true"] .stage-organization, [data-motion="true"] .stage-logo { transform: none; }
     .career-stage { grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: 1.25rem; row-gap: 1.1rem; }
-    .timeline-connector { left: calc(1.375rem - 16px); top: 1.375rem; width: 32px; }
+    .timeline-connector { left: calc(1.375rem - 1px); top: 1.375rem; }
     .milestone { grid-column: 1; grid-row: 1; width: 2.75rem; height: 2.75rem; font-size: .6875rem; }
     .stage-identity, .career-stage:nth-child(even) .stage-identity { grid-column: 2; grid-row: 1; text-align: left; }
     .stage-story, .career-stage:nth-child(even) .stage-story { grid-column: 2; grid-row: 2; }

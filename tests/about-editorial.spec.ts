@@ -41,8 +41,11 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     expect(axe.violations, JSON.stringify(axe.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })))).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(await page.locator('article').innerText()).not.toMatch(/\u2014|Lorem ipsum|(?:19|20)\d{2}/);
-    await expect(page.getByRole('img', { name: 'Professional portrait of Ben Davis' })).toHaveCount(0);
-    await expect(page.locator('.editorial-heading img, .editorial-heading picture')).toHaveCount(0);
+    const portrait = page.getByRole('img', { name: 'Professional portrait of Ben Davis' });
+    await expect(portrait).toBeVisible();
+    expect(await portrait.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect(portrait).toHaveAttribute('width', /^\d+$/);
+    await expect(portrait).toHaveAttribute('height', /^\d+$/);
     if (width > 650) await expect(page.locator('.journey-art')).toBeVisible();
     else await expect(page.locator('.journey-art')).toBeHidden();
     expect(errors).toEqual([]);

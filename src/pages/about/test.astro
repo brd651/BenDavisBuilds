@@ -1,5 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { Picture } from 'astro:assets';
+import portrait from '../../assets/about/ben-davis-editorial.png';
 import CareerJourneyHero from '../../components/CareerJourneyHero.astro';
 import CareerTimeline from '../../components/CareerTimeline.astro';
 import CareerChapterNav from '../../components/CareerChapterNav.astro';
@@ -10,7 +12,13 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
     <div class="experiment-notice"><p><span>Design test</span> About / Career timeline</p><a href="/about/">View the current About page <span aria-hidden="true">↗</span></a></div>
     <header class="editorial-heading">
       <div class="heading-copy"><p class="eyebrow">About / Career chapters</p><h1>A career built <span>through curiosity.</span></h1><p class="opening">I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p><p class="intro">I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p></div>
-      <CareerJourneyHero />
+      <div class="portrait-stage">
+        <div class="portrait-flow"><CareerJourneyHero /></div>
+        <figure class="editorial-portrait">
+          <Picture src={portrait} alt="Professional portrait of Ben Davis" formats={['avif', 'webp']} fallbackFormat="jpg" widths={[280, 400, 600, 800]} sizes="(max-width: 650px) 280px, (max-width: 900px) 34vw, 360px" loading="eager" fetchpriority="high" />
+          <figcaption>Ben Davis<span>Technical leadership / Always learning</span></figcaption>
+        </figure>
+      </div>
     </header>
     <section class="career-section" id="career" aria-labelledby="career-title" tabindex="-1">
       <header class="career-heading"><h2 id="career-title">The chapters.</h2><p>Over time, my career expanded from individual technical problem solving into helping teams solve problems at scale.</p></header>
@@ -36,6 +44,13 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   .heading-copy .eyebrow { font-size: .6875rem; margin-bottom: 1.75rem; }
   .opening { max-width: 47ch; font-size: clamp(1.125rem, 1.8vw, 1.35rem); line-height: 1.55; letter-spacing: -.02em; }
   .intro { color: var(--bs-muted); max-width: 58ch; font-size: 1rem; line-height: 1.8; }
+  .portrait-stage { position: relative; min-width: 0; padding: 1rem 0 2rem; }
+  .portrait-flow { position: absolute; inset: auto -1rem -2rem -3rem; pointer-events: none; opacity: .75; }
+  .portrait-flow :global(figcaption) { display: none; }
+  .editorial-portrait { position: relative; max-width: 360px; margin: 0 auto; border: 1px solid var(--bs-line); background: var(--bs-page); box-shadow: 0 1rem 3rem color-mix(in srgb, var(--bs-text) 8%, transparent); }
+  .editorial-portrait :global(img) { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; }
+  .editorial-portrait figcaption { position: relative; display: grid; gap: .4rem; padding: 1rem 1.25rem; border-left: 3px solid var(--bs-scarlet); font-size: .875rem; font-weight: 650; }
+  .editorial-portrait figcaption span { color: var(--bs-muted); font-size: .6875rem; letter-spacing: .05em; font-weight: 400; }
   .career-section { scroll-margin-top: 2rem; }
   .career-heading { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; border-block: 1px solid var(--bs-border); padding-block: 2rem; margin-bottom: 3rem; align-items: center; }
   .career-heading h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); margin: 0; max-width: 12ch; }
@@ -48,6 +63,9 @@ import { editorialCareerStages, careerReflections } from '../../data/career-edit
   .editorial-closing nav { margin-top: 2rem; }
   .editorial-closing nav a { display: inline-block; font-size: .875rem; padding: .5rem 0; margin-right: 2rem; }
   @media (max-width: 650px) {
+    .portrait-stage { padding: 0; }
+    .editorial-portrait { max-width: 280px; }
+    .portrait-flow { display: none; }
     .editorial-heading { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-block: 2.5rem; }
     h1 { font-size: clamp(1.75rem, 8.5vw, 3rem); }
     .career-heading { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; margin-bottom: 2rem; }

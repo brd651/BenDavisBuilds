@@ -61,3 +61,12 @@ Rebuild to publish a scheduled date; this static site has no scheduling service.
 Run `npm run verify` before proposing publication. Content acceptance tests add
 temporary fixtures in an isolated copy; they never add fixture articles to the
 public source. Detailed authoring and deployment documentation remains local-only.
+
+Public search discovery uses `indexableUrls()` in `src/lib/publishing.ts`.
+Genuine professional pages and dated, non-sample articles are eligible;
+experiments, simulations, sample-only sections and search results stay noindex.
+`PUBLIC_NOINDEX=true` disables discovery for a separate preview build. `robots.txt`
+allows search and user-directed retrieval while denying the separate GPTBot and
+ClaudeBot training crawlers. `llms.txt` is a small public reading index, not an
+access-control or licensing mechanism. Keep private operational documentation and
+agent instructions out of all generated discovery files.

@@ -38,7 +38,7 @@ for (const width of [320, 390, 768, 1440, 3840]) for (const theme of ['dark','li
 test('metadata, generated index and feed agree on published article routes',async({page,request})=>{
   const entries=await (await request.get('/search-index.json')).json();
   expect(entries).toHaveLength(5); const sitemap=await(await request.get('/sitemap.xml')).text(); const rss=await(await request.get('/rss.xml')).text();
-  for(const entry of entries) { expect(sitemap).toContain(`https://bendavisbuilds.com${entry.url}`); expect(rss).toContain(`https://bendavisbuilds.com${entry.url}`); expect((await request.get(entry.url)).status()).toBe(200); }
+  for(const entry of entries) { expect(sitemap).not.toContain(`https://bendavisbuilds.com${entry.url}`); expect(rss).toContain(`https://bendavisbuilds.com${entry.url}`); expect((await request.get(entry.url)).status()).toBe(200); }
   await page.goto('/writing/technical-sample/');
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content',/^https:\/\/bendavisbuilds.com\/_astro\/.+\.webp$/);
   expect(rss).not.toContain('<pubDate>'); expect(sitemap).not.toContain('/404/');

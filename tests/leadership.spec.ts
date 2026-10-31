@@ -75,7 +75,7 @@ for (const [width, height] of [[3840, 2160], [2560, 1440], [1920, 1080], [1440, 
 
 test('leadership metadata, About discovery, keyboard and System preference', async ({ page }) => {
   await page.goto('/about/');
-  await page.getByRole('link', { name: 'Read my leadership philosophy' }).click();
+  await page.locator('.editorial-closing').getByRole('link', { name: 'Leadership', exact: true }).click();
   await expect(page).toHaveURL('/leadership/');
   await expect(page).toHaveTitle('How I Lead. · Ben Davis Builds');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://bendavisbuilds.com/leadership/');

@@ -105,14 +105,17 @@ for (const javaScriptEnabled of [false, true]) test(`About editorial reflow at 3
   await context.close();
 });
 
-test('Design experiment stays out of discovery and canonical About keeps its original content', async ({ page, request }) => {
+test('Design experiment stays out of discovery and canonical About adopts the editorial timeline', async ({ page, request }) => {
   expect((await (await request.get('/sitemap.xml')).text())).not.toContain('/about/test/');
   expect((await (await request.get('/search-index.json')).text())).not.toContain('/about/test/');
   expect((await (await request.get('/rss.xml')).text())).not.toContain('/about/test/');
   await page.goto('/about/');
-  await expect(page.locator('h1')).toHaveText('About Ben Davis.');
-  await expect(page.locator('.carry-forward, .career-artifact, .chapter-index')).toHaveCount(0);
-  for (const stage of careerStages) await expect(page.locator(`#${stage.id} .stage-story > p`)).toHaveText(stage.summary);
+  await expect(page.locator('h1')).toHaveText('A career built through curiosity.');
+  await expect(page.locator('.carry-forward')).toHaveCount(7);
+  await expect(page.locator('.career-artifact')).toHaveCount(3);
+  await expect(page.locator('.experiment-notice, .compare-link')).toHaveCount(0);
+  await expect(page.locator('#still-building')).toContainText('A timing issue in the script left the device in recovery mode');
+  await expect(page.locator('#still-building')).toContainText('Long before Ben Davis Builds, I ran a technical blog called TheoryIT.');
 });
 
 

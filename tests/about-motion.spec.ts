@@ -54,14 +54,7 @@ for (const theme of ['dark', 'light']) for (const width of [390, 768, 1440, 3840
     await expect.poll(() => page.locator('#sonicwall .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
     expect(axe.violations, JSON.stringify(axe.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })))).toEqual([]);
-    const pause = page.getByRole('button', { name: 'Pause timeline motion' });
-    await pause.click();
-    await expect(timeline).toHaveAttribute('data-motion', 'false');
-    await expect(page.getByRole('button', { name: 'Resume timeline motion' })).toBeVisible();
-    await expect(path).toHaveAttribute('d', 'M0 0 V100');
-    await expect.poll(() => page.locator('#sophos .stage-story').evaluate(el => Number(getComputedStyle(el).opacity))).toBe(1);
-    await page.getByRole('button', { name: 'Resume timeline motion' }).click();
-    await expect(timeline).toHaveAttribute('data-motion', 'true');
+    await expect(page.locator('[data-timeline-motion]')).toHaveCount(0);
     await page.mouse.move(0, 0);
     await page.locator('#sonicwall summary').focus();
     await page.keyboard.press('Enter');

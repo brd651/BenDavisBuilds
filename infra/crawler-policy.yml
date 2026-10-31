@@ -1,0 +1,72 @@
+---
+# Scoped migration of the existing website config; does not reprovision services.
+- name: Apply public website crawler headers without changing existing routes
+  hosts: website
+  become: true
+  gather_facts: false
+  vars:
+    local_docs_dir: "{{ lookup('env', 'HOME') }}/Website-LocalDocs"
+    crawler_headers: |2
+          # BEGIN managed website crawler headers
+          @non_public path /about/test /about/test/* /lab /lab/* /writing/search /writing/search/* /api/* /health.txt /analytics-routes.json /search-index.json /404.html
+          header @non_public X-Robots-Tag "noindex, nofollow"
+          # END managed website crawler headers
+  tasks:
+    - name: Read current Caddy configuration privately
+      ansible.builtin.slurp:
+        src: /etc/caddy/Caddyfile
+      register: current_caddy
+      no_log: true
+    - name: Require the expected website snippet and insertion point
+      ansible.builtin.assert:
+        that:
+          - "'(static_site)' in (current_caddy.content | b64decode)"
+          - "(current_caddy.content | b64decode) is search('(?m)^    @fingerprinted path_regexp')"
+          - "'@non_public' not in (current_caddy.content | b64decode) or '# BEGIN managed website crawler headers' in (current_caddy.content | b64decode)"
+        fail_msg: Unexpected Caddy layout; inspect privately before applying a scoped update.
+    - name: Verify private backup directory
+      ansible.builtin.file:
+        path: '{{ local_docs_dir }}/backups'
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+    - name: Save existing configuration privately before changes
+      ansible.builtin.copy:
+        content: '{{ current_caddy.content | b64decode }}'
+        dest: '{{ local_docs_dir }}/backups/Caddyfile-before-crawler-{{ (current_caddy.content | b64decode) | hash("sha256") }}'
+        mode: '0600'
+        force: false
+      delegate_to: localhost
+      become: false
+      no_log: true
+    - name: Prepare minimal header-only configuration update
+      ansible.builtin.set_fact:
+        public_caddy: >-
+          {{ (current_caddy.content | b64decode)
+             | regex_replace('(?m)^        X-Robots-Tag "noindex, nofollow"\r?\n', '')
+             | regex_replace('(?ms)^    # BEGIN managed website crawler headers\n.*?^    # END managed website crawler headers\n', '')
+             | regex_replace('(?m)^    @fingerprinted path_regexp', crawler_headers ~ '    @fingerprinted path_regexp') }}
+      no_log: true
+    - name: Install only after validating the resulting Caddy configuration
+      ansible.builtin.copy:
+        content: '{{ public_caddy }}'
+        dest: /etc/caddy/Caddyfile
+        owner: root
+        group: caddy
+        mode: '0640'
+        validate: '/usr/bin/caddy validate --config %s --adapter caddyfile'
+      notify: Reload Caddy
+      no_log: true
+    - name: Apply validated crawler-header reload
+      ansible.builtin.meta: flush_handlers
+    - name: Confirm Caddy remains unprivileged and active
+      ansible.builtin.command: systemctl show caddy --property=User --value
+      register: caddy_user
+      changed_when: false
+      failed_when: caddy_user.stdout != 'caddy'
+  handlers:
+    - name: Reload Caddy
+      ansible.builtin.systemd_service:
+        name: caddy
+        state: reloaded

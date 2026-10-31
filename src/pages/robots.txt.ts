@@ -1,2 +1,3 @@
 import type { APIRoute } from 'astro';
-export const GET: APIRoute = () => new Response(import.meta.env.PUBLIC_NOINDEX !== 'false' ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nAllow: /\n', { headers: { 'Content-Type': 'text/plain' } });
+import { robotsPolicy } from '../lib/crawler-policy';
+export const GET: APIRoute = ({ site }) => new Response(robotsPolicy(site!.origin, import.meta.env.PUBLIC_NOINDEX === 'true'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

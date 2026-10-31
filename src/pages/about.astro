@@ -1,106 +1,73 @@
 ---
 import Base from '../layouts/Base.astro';
 import { Picture } from 'astro:assets';
-import headshot from '../assets/about/ben-davis-editorial.png';
+import portrait from '../assets/about/ben-davis-editorial.png';
+import CareerJourneyHero from '../components/CareerJourneyHero.astro';
 import CareerTimeline from '../components/CareerTimeline.astro';
-import { careerStages } from '../data/career';
+import CareerChapterNav from '../components/CareerChapterNav.astro';
+import { editorialCareerStages, careerReflections } from '../data/career-editorial';
 ---
-<Base title="About Ben Davis" description="A career built through curiosity: Marine Corps service, hands-on engineering, cybersecurity, and sales engineering leadership." sampleContent={false} socialMetadata>
-  <article class="about-page">
-    <header class="about-heading">
-      <div class="about-title">
-        <p class="eyebrow">About / The person behind the work</p>
-        <h1>About Ben Davis.</h1>
-        <p class="about-disciplines">Technical leadership. Cybersecurity.<br />Applied AI. Always learning.</p>
-      </div>
-      <figure class="about-portrait">
-        <Picture src={headshot} alt="Professional portrait of Ben Davis" formats={['avif', 'webp']} widths={[320, 480, 640, 800]} sizes="(max-width: 650px) 280px, (max-width: 900px) 38vw, 380px" loading="eager" fetchpriority="high" />
-      </figure>
-      <div class="about-opening">
-        <p class="opening-statement">I have spent my career at the intersection of technology, leadership, and problem solving.</p>
-        <p>I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p>
-        <a class="text-link" href="#career">Follow the progression <span aria-hidden="true">↓</span></a>
-      </div>
-      <div class="about-perspectives" aria-label="What connects the story">
-        <p><span>01 / Service</span>Understand the full picture.</p>
-        <p><span>02 / Engineering</span>Keep learning by doing.</p>
-        <p><span>03 / Leadership</span>Help teams solve problems at scale.</p>
+<Base title="About Ben Davis" description="Marine Corps service, hands-on engineering, cybersecurity, and technical leadership. The experiences and lessons behind Ben Davis Builds." sampleContent={false} socialMetadata>
+  <article class="about-editorial-page">
+
+    <header class="editorial-heading">
+      <div class="heading-copy"><p class="eyebrow">About / Career chapters</p><h1>A career built <span>through curiosity.</span></h1><p class="opening">I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p><p class="intro">I am a cybersecurity and sales engineering leader, a United States Marine Corps veteran, and someone who still enjoys getting hands on with the systems and tools I work with.</p></div>
+      <div class="portrait-stage">
+        <div class="portrait-flow"><CareerJourneyHero /></div>
+        <figure class="editorial-portrait">
+          <Picture src={portrait} alt="Professional portrait of Ben Davis" formats={['avif', 'webp']} fallbackFormat="jpg" widths={[280, 400, 600, 800]} sizes="(max-width: 650px) 280px, (max-width: 900px) 34vw, 360px" loading="eager" fetchpriority="high" />
+          <figcaption>Ben Davis<span>Technical leadership / Always learning</span></figcaption>
+        </figure>
       </div>
     </header>
-
-    <section class="curiosity-intro" aria-labelledby="curiosity-title">
-      <div><p class="eyebrow">The thread through it all</p><h2 id="curiosity-title">Curiosity comes first.</h2></div>
-      <p>I have always believed that strong technical leadership starts with curiosity... understanding how things work, where they break, and how to make them better.</p>
-    </section>
-
     <section class="career-section" id="career" aria-labelledby="career-title" tabindex="-1">
-      <header class="section-heading">
-        <div><p class="eyebrow">Service → Engineering → Leadership</p><h2 id="career-title">A career built<br />through curiosity.</h2></div>
-        <p>Over time, my career expanded from individual technical problem solving into helping teams solve problems at scale.</p>
-      </header>
-      <nav class="career-overview" aria-label="Career chapters">
-        <ol>{careerStages.map((stage, index) => <li><a href={`#${stage.id}`}><span class="chapter-number">{String(index + 1).padStart(2, '0')}</span><span>{stage.label}</span></a></li>)}</ol>
-      </nav>
-      <CareerTimeline stages={careerStages} />
+      <header class="career-heading"><h2 id="career-title">The chapters.</h2><p>Over time, my career expanded from individual technical problem solving into helping teams solve problems at scale.</p></header>
+      <div class="career-layout" data-career-editorial>
+        <CareerChapterNav stages={editorialCareerStages} showComparison={false} />
+        <div class="career-reading"><CareerTimeline stages={editorialCareerStages} reflections={careerReflections} motionControl={false} /></div>
+      </div>
     </section>
-
     <section class="still-building" aria-labelledby="building-title" tabindex="-1" id="still-building">
       <div class="building-heading"><p class="eyebrow">Beyond the job title</p><h2 id="building-title">Why I<br />still build.</h2><p>Even as my career moved further into leadership, I never wanted to disconnect from building.</p></div>
       <div class="building-story">
         <h3>Before this, there was TheoryIT.</h3>
         <p>Long before Ben Davis Builds, I ran a technical blog called TheoryIT. It was where I documented projects, experiments, troubleshooting lessons, and ideas I was testing in the lab. Some of it was focused on networking and security. Some of it involved automation, simulation, Linux routing, PowerShell, or other technical rabbit holes that caught my interest. Not everything worked perfectly... and that was part of the value.</p>
-        <div class="theoryit-archive">
-          <a href="https://web.archive.org/web/20190109115510/https://theoryit.com/" target="_blank" rel="noopener noreferrer" aria-describedby="theoryit-archive-note">Explore the original TheoryIT website — Internet Archive.</a>
-          <p id="theoryit-archive-note">Historical material. I no longer control the original theoryit.com domain.</p>
-        </div>
-        <details class="lesson"><summary>A lesson from a firewall automation project <span aria-hidden="true">+</span></summary><p>One of the most useful lessons from that time came from a firewall automation project that did not behave the way I expected. A timing issue in the script left the device in recovery mode instead of completing cleanly. It was frustrating at the time, but it reinforced an idea that has stayed with me ever since... automation is only as good as your understanding of the systems, dependencies, and failure conditions underneath it.</p></details>
-        <blockquote><p>Automation is only as good as your understanding of the systems, dependencies, and failure conditions underneath it.</p><cite>A lesson I still carry.</cite></blockquote>
+
+        <section class="lesson" aria-labelledby="firewall-lesson"><h3 id="firewall-lesson">A lesson from a firewall automation project</h3><p>One of the most useful lessons from that time came from a firewall automation project that did not behave the way I expected. A timing issue in the script left the device in recovery mode instead of completing cleanly. It was frustrating at the time, but it reinforced an idea that has stayed with me ever since... automation is only as good as your understanding of the systems, dependencies, and failure conditions underneath it.</p></section>
+
       </div>
     </section>
 
-    <section class="what-next" aria-labelledby="next-title">
-      <div class="next-heading"><p class="eyebrow">Ben Davis Builds / An ongoing personal project</p><h2 id="next-title">Same curiosity.<br />What comes next?</h2></div>
-      <div class="next-story"><p>That same spirit carries into what I am building now.</p><p>I am especially interested in how AI can make technical teams more effective in practical ways. Not just by generating more content, but by reducing repetitive work, improving access to knowledge, and helping people focus on better questions and higher value problems.</p><p>Some topics reflect areas where I have years of experience. Others reflect things I am actively learning now.</p></div>
-      <div class="next-links"><a href="/leadership/"><span>People + perspective</span>Read my leadership philosophy <span aria-hidden="true">↗</span></a><a href="/projects/"><span>Systems + experiments</span>Explore projects <span aria-hidden="true">↗</span></a><a href="/mentorship/"><span>Learning + growth</span>Mentorship <span aria-hidden="true">↗</span></a></div>
-      <p class="closing-note">Either way, the goal is the same... keep learning, keep building, and share what proves useful along the way.</p>
-    </section>
+    <footer class="editorial-closing"><p class="eyebrow">Same curiosity / What comes next</p><h2>Keep learning.<br />Keep building.</h2><p>I am especially interested in how AI can make technical teams more effective in practical ways. Not just by generating more content, but by reducing repetitive work, improving access to knowledge, and helping people focus on better questions and higher value problems.</p><p>Some topics reflect areas where I have years of experience. Others reflect things I am actively learning now.</p><p>Either way, the goal is the same... keep learning, keep building, and share what proves useful along the way.</p><nav aria-label="Explore more"><a href="/projects/">Projects <span aria-hidden="true">↗</span></a><a href="/leadership/">Leadership <span aria-hidden="true">↗</span></a><a href="/mentorship/">Mentorship <span aria-hidden="true">↗</span></a></nav></footer>
   </article>
 </Base>
 
 <style>
-  :global(html:has(.about-page)) { scroll-behavior: auto; }
-  .about-page { margin-bottom: 5rem; }
-  .about-heading { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.25fr); align-items: start; gap: 1.5rem 5rem; border-top: 1px solid var(--bs-line); padding-top: clamp(2.5rem, 6vw, 5rem); }
-  .about-title { grid-column: 2; grid-row: 1; }
-  .about-portrait { grid-column: 1; grid-row: 1 / 3; width: min(100%, 380px); aspect-ratio: 4 / 5; margin: 0; overflow: hidden; border-bottom: 3px solid var(--bs-brass); }
-  .about-portrait :global(picture) { display: block; width: 100%; height: 100%; }
-  .about-portrait :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
-  .about-title .eyebrow { display: flex; align-items: center; gap: .8rem; }
-  .about-title .eyebrow::before { content: ''; height: 1rem; width: 3px; background: var(--bs-scarlet); }
-  h1 { font-size: clamp(2.5rem, 4.3vw, 3.5rem); line-height: 1.08; letter-spacing: -.05em; font-weight: 650; margin-bottom: 1rem; }
-  .about-disciplines { font-size: 1rem; line-height: 1.7; color: var(--bs-muted); margin: 0; }
-  .about-opening { grid-column: 2; grid-row: 2; padding-bottom: .25rem; }
-  .about-opening .opening-statement { font-size: clamp(1.4rem, 2.3vw, 1.9rem); line-height: 1.3; letter-spacing: -.035em; color: var(--bs-text); max-width: 25ch; }
-  .about-opening p { color: var(--bs-muted); font-size: 1.0625rem; line-height: 1.8; }
-  .about-opening a { display: inline-flex; gap: 1rem; margin-top: .8rem; }
-  .about-perspectives { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--bs-border); gap: 1.5rem; padding-block: 1.5rem; }
-  .about-perspectives p { margin: 0; font-size: .9375rem; }
-  .about-perspectives span { display: block; font-size: .6875rem; text-transform: uppercase; letter-spacing: .15em; color: var(--bs-muted); margin-bottom: .6rem; }
-  .curiosity-intro { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; margin-block: 4rem 0; padding: clamp(1.5rem, 4vw, 3rem); background: var(--bs-surface); border-left: 2px solid var(--bs-brass); align-items: center; }
-  .curiosity-intro h2 { font-size: clamp(1.75rem, 3vw, 2.6rem); margin: 0; }
-  .curiosity-intro .eyebrow { margin-bottom: 1rem; }
-  .curiosity-intro > p { font-size: 1.125rem; line-height: 1.8; margin: 0; color: var(--bs-muted); }
-  .career-section { padding-block: clamp(4rem, 8vw, 7rem); scroll-margin-top: 2rem; }
-  .section-heading { display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: end; }
-  .section-heading h2 { font-size: clamp(2.5rem, 5.5vw, 4.4rem); margin: 0; }
-  .section-heading > p { color: var(--bs-muted); max-width: 42ch; margin: 0; font-size: 1.125rem; }
-  .career-overview { margin-block: 3rem 5rem; }
-  .career-overview ol { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0; margin: 0; list-style: none; border-top: 1px solid var(--bs-border); }
-  .career-overview a { display: flex; flex-direction: column; gap: .8rem; padding: 1rem .75rem 1rem 0; text-decoration: none; font-size: .75rem; font-weight: 600; line-height: 1.4; }
-  .career-overview a:hover { text-decoration: underline; }
-  .chapter-number { font-weight: 500; font-size: .6875rem; color: var(--bs-muted); font-variant-numeric: tabular-nums; }
-  .career-overview li:first-child { border-top: 2px solid var(--bs-scarlet); margin-top: -1px; }
-  .career-overview li:last-child { border-top: 2px solid var(--bs-brass); margin-top: -1px; }
+  :global(html:has(.about-editorial-page)) { scroll-behavior: auto; }
+  .about-editorial-page { margin-bottom: 5rem; }
+  .experiment-notice { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .65rem 1.5rem; border-block: 1px solid var(--bs-line); padding-block: .85rem; font-size: .75rem; color: var(--bs-muted); }
+  .experiment-notice p { margin: 0; }
+  .experiment-notice p > span { display: inline-block; color: var(--bs-text); border-left: 3px solid var(--bs-scarlet); padding-left: .7rem; margin-right: 1rem; font-weight: 650; }
+  .experiment-notice a { padding-block: .25rem; }
+  .editorial-heading { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, .9fr); align-items: center; gap: clamp(2rem, 4vw, 4rem); padding-block: clamp(2.5rem, 5vw, 4rem); }
+  h1 { font-size: clamp(2.75rem, 5.2vw, 4.5rem); max-width: 18ch; line-height: 1.06; letter-spacing: -.055em; font-weight: 600; margin-bottom: 1.7rem; }
+  h1 > span { display: block; }
+  .heading-copy .eyebrow { font-size: .6875rem; margin-bottom: 1.75rem; }
+  .opening { max-width: 47ch; font-size: clamp(1.125rem, 1.8vw, 1.35rem); line-height: 1.55; letter-spacing: -.02em; }
+  .intro { color: var(--bs-muted); max-width: 58ch; font-size: 1rem; line-height: 1.8; }
+  .portrait-stage { position: relative; min-width: 0; padding: 1rem 0 2rem; }
+  .portrait-flow { position: absolute; inset: auto -1rem -2rem -3rem; pointer-events: none; opacity: .75; }
+  .portrait-flow :global(figcaption) { display: none; }
+  .editorial-portrait { position: relative; max-width: 360px; margin: 0 auto; border: 1px solid var(--bs-line); background: var(--bs-page); box-shadow: 0 1rem 3rem color-mix(in srgb, var(--bs-text) 8%, transparent); }
+  .editorial-portrait :global(img) { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; }
+  .editorial-portrait figcaption { position: relative; display: grid; gap: .4rem; padding: 1rem 1.25rem; border-left: 3px solid var(--bs-scarlet); font-size: .875rem; font-weight: 650; }
+  .editorial-portrait figcaption span { color: var(--bs-muted); font-size: .6875rem; letter-spacing: .05em; font-weight: 400; }
+  .career-section { scroll-margin-top: 2rem; }
+  .career-heading { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; border-block: 1px solid var(--bs-border); padding-block: 2rem; margin-bottom: 3rem; align-items: center; }
+  .career-heading h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); margin: 0; max-width: 12ch; }
+  .career-heading > p { max-width: 46ch; margin: 0; color: var(--bs-muted); font-size: 1.0625rem; line-height: 1.8; }
+  .career-layout { position: relative; max-width: 980px; margin-inline: auto; }
+  .career-reading { min-width: 0; }
   .still-building { display: grid; grid-template-columns: .8fr 1.2fr; gap: 5rem; border-top: 1px solid var(--bs-border); padding-block: 4rem 5rem; scroll-margin-top: 2rem; }
   .building-heading h2 { font-size: clamp(3rem, 6vw, 5rem); }
   .building-heading > p:last-child { font-size: 1.125rem; max-width: 28ch; color: var(--bs-muted); }
@@ -118,32 +85,23 @@ import { careerStages } from '../data/career';
   blockquote { margin: 2.5rem 0 0; padding-left: 1.5rem; border-left: 2px solid var(--bs-brass); }
   blockquote p { font-family: ui-serif, Georgia, serif; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.45; }
   blockquote cite { font: inherit; font-size: .8125rem; color: var(--bs-muted); }
-  .what-next { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2.5rem 4rem; border-top: 1px solid var(--bs-border); padding-top: 4rem; }
-  .next-heading h2 { font-size: clamp(2.5rem, 5vw, 3.75rem); }
-  .next-story p { color: var(--bs-muted); font-size: 1.0625rem; line-height: 1.8; }
-  .next-links { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--bs-border); }
-  .next-links a { display: block; padding: 1.5rem 1rem 1.5rem 0; font-size: 1.3rem; font-weight: 600; text-decoration: none; }
-  .next-links a:hover { text-decoration: underline; }
-  .next-links a > span:first-child { display: block; font-size: .6875rem; font-weight: 500; color: var(--bs-muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
-  .next-links a > span:last-child { display: inline; font-size: 1rem; margin-left: .5rem; }
-  .closing-note { grid-column: 1 / -1; max-width: 58ch; color: var(--bs-muted); font-size: 1.125rem; margin: 0; }
-  @media (max-width: 900px) { .about-heading { gap: 2.5rem; } .still-building { gap: 2.5rem; } .what-next { gap: 2.5rem; } .career-overview ol { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .lesson h3 { font-size: 1.125rem; margin: 1.25rem 0 .75rem; }
+  .lesson { border-left: 2px solid var(--bs-brass); padding-left: 1.5rem; border-block: 0; }
+  .editorial-closing > p { max-width: 60ch; color: var(--bs-muted); line-height: 1.8; }
+  .editorial-closing { border-top: 1px solid var(--bs-border); margin-top: 5rem; padding-top: 3rem; }
+  .editorial-closing h2 { font-size: clamp(2.5rem, 5vw, 4rem); }
+  .editorial-closing > p:last-of-type { max-width: 58ch; color: var(--bs-muted); font-size: 1.125rem; }
+  .editorial-closing nav { margin-top: 2rem; }
+  .editorial-closing nav a { display: inline-block; font-size: .875rem; padding: .5rem 0; margin-right: 2rem; }
   @media (max-width: 650px) {
-    .about-heading, .curiosity-intro, .section-heading, .still-building, .what-next { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
-    h1 { font-size: clamp(2.5rem, 9vw, 3.5rem); }
-    .about-title, .about-portrait, .about-opening { grid-column: 1; grid-row: auto; }
-    .about-portrait { width: min(100%, 280px); }
-    .about-heading { padding-top: 2.5rem; }
-    .about-perspectives { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
-    .about-perspectives p { display: flex; gap: 1rem; align-items: baseline; }
-    .about-perspectives span { min-width: 7rem; margin: 0; }
-    .curiosity-intro { margin-top: 2rem; }
-    .career-overview { margin-block: 2rem 3rem; }
-    .career-overview ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .career-overview a { flex-direction: row; align-items: baseline; }
-    .next-links { grid-template-columns: minmax(0, 1fr); }
-    .next-links a + a { border-top: 1px solid var(--bs-line); }
-    .still-building, .what-next { padding-top: 3rem; }
+    .portrait-stage { padding: 0; }
+    .editorial-portrait { max-width: 280px; }
+    .portrait-flow { display: none; }
+    .editorial-heading { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-block: 2.5rem; }
+    h1 { font-size: clamp(1.75rem, 8.5vw, 3rem); }
+    .still-building { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; padding-block: 3rem; }
+    .career-heading { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+    .career-heading h2 { max-width: none; }
   }
-  @media (max-width: 420px) { .about-perspectives p { display: block; } .about-perspectives span { margin-bottom: .3rem; } }
 </style>

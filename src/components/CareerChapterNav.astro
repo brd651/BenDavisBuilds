@@ -1,13 +1,13 @@
 ---
 import type { CareerStage } from '../data/career';
-interface Props { stages: readonly CareerStage[] }
-const { stages } = Astro.props;
+interface Props { stages: readonly CareerStage[]; showComparison?: boolean }
+const { stages, showComparison = true } = Astro.props;
 ---
 <div class="chapter-rail">
 <nav class="chapter-index" aria-label="Career chapters" data-chapter-index>
   <div class="index-heading"><p class="eyebrow">The chapters</p><span>{String(stages.length).padStart(2, '0')}</span></div>
   <ol>{stages.map((stage, index) => <li><a href={`#${stage.id}`}><span class="index-number">{String(index + 1).padStart(2, '0')}</span><span>{stage.label}</span><span class="index-marker" aria-hidden="true">↗</span></a></li>)}</ol>
-  <a class="compare-link" href="/about/">Compare the current About page <span aria-hidden="true">↗</span></a>
+  {showComparison && <a class="compare-link" href="/about/">Compare the current About page <span aria-hidden="true">↗</span></a>}
 </nav>
 </div>
 

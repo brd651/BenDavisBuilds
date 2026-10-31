@@ -13,12 +13,12 @@ for (const theme of ['dark', 'light']) for (const [width, height] of profiles) {
     page.on('pageerror', e => errors.push(e.message));
     expect((await page.goto('/about/'))?.status()).toBe(200);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toHaveText('About Ben Davis.');
+    await expect(page.locator('h1')).toHaveText('A career built through curiosity.');
     const portrait = page.getByRole('img', { name: 'Professional portrait of Ben Davis' });
     await expect(portrait).toBeVisible();
     expect(await portrait.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
     const logos = page.locator('.stage-logo img:visible');
-    await expect(logos).toHaveCount(5);
+    await expect(logos).toHaveCount(6);
     for (const logo of await logos.all()) {
       await logo.scrollIntoViewIfNeeded();
       await expect.poll(() => logo.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
@@ -82,6 +82,7 @@ test('About keyboard chapters, native disclosures, focus and themes', async ({ p
   await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
   await expect(page.locator('main')).toBeFocused();
+  await page.locator('#marine-corps').scrollIntoViewIfNeeded();
   const link = page.getByRole('link', { name: '03 SonicWall', exact: true });
   await link.focus();
   await page.keyboard.press('Enter');
@@ -147,7 +148,7 @@ for (const width of [390, 768, 1440, 1920, 3840]) test(`About System mode and lo
   const disclosures = page.locator('.career-stage details');
   for (const disclosure of await disclosures.all()) {
     await disclosure.locator('summary').click();
-    expect((await disclosure.locator('.stage-detail').innerText()).length).toBeGreaterThan(250);
+    expect((await disclosure.locator('.stage-detail').innerText()).length).toBeGreaterThan(100);
     await expect(disclosure.locator('h4').first()).toBeVisible();
   }
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();

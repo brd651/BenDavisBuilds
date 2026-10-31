@@ -18,10 +18,11 @@
     "screenshots": "node scripts/screenshots.mjs",
     "validate:tokens": "python3 built_signal_v1/verification/check_tokens.py",
     "validate:budget": "node scripts/check-js-budget.mjs",
-    "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test",
+    "verify": "npm run validate:tokens && npm run check && npm run build && npm run validate:budget && npm run test:crawlers && npm run test",
     "assets:identity": "node scripts/generate-identity.mjs",
     "test:unit": "node --test tests/publishing-unit.ts tests/homepage-unit.ts",
-    "test:content": "node scripts/test-publishing.mjs"
+    "test:content": "node scripts/test-publishing.mjs",
+    "test:crawlers": "python3 scripts/test-crawlers.py"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "0.4.3",

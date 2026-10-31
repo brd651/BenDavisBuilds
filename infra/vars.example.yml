@@ -6,3 +6,6 @@ https_ready: false
 www_ready: false
 preview_address: http://192.0.2.10
 local_docs_dir: "{{ lookup('env', 'HOME') }}/Website-LocalDocs"
+
+# Set true only for a deliberately non-public preview deployment.
+development_noindex: false

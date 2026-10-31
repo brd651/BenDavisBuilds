@@ -18,7 +18,7 @@ try {
     await writeFile(join(base,'draft-sentinel.md'),fixture('draft-sentinel',`${extra}draft: true\nfeatured: true\n`));
     await writeFile(join(base,'future-sentinel.md'),fixture('future-sentinel',`${extra}publishedAt: "2999-01-01"\nfeatured: true\n`));
   }
-  await writeFile(join(work,'src/content/writing/automatic-file.md'),fixture('Automatic file route', 'publishedAt: "2000-01-07"\nimage: ../../assets/articles/publishing-workflow.png\nimageAlt: "Temporary acceptance illustration."\n'));
+  await writeFile(join(work,'src/content/writing/automatic-file.md'),fixture('Automatic file route', 'publishedAt: "2000-01-07"\nimage: ../../assets/articles/publishing-workflow.png\nimageAlt: "Temporary acceptance illustration."\n').replace('sample: true', 'sample: false'));
   for(let i=1;i<=6;i++) await writeFile(join(work,`src/content/writing/pagination-fixture-${i}.md`),fixture(`Pagination fixture ${i}`, `publishedAt: "2000-01-0${i}"\n`));
   // Only this throwaway copy gets fixture dates: the selected feature is older than seven dated entries.
   const technicalPath = join(work,'src/content/writing/technical-sample.mdx');

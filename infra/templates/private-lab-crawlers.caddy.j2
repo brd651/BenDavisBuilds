@@ -1,0 +1,11 @@
+# Import at the start of the verified private lab's existing route block.
+# Keep its existing authentication and upstream unchanged. This is not auth.
+header X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+@lab_robots path /robots.txt
+header @lab_robots Content-Type "text/plain; charset=utf-8"
+respond @lab_robots <<ROBOTS
+User-agent: *
+Disallow: /
+ROBOTS
+@lab_discovery path /sitemap.xml /sitemap-index.xml /llms.txt /llms-full.txt /ai.txt /agents.txt
+respond @lab_discovery "Not found" 404

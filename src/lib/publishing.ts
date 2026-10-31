@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { isPublished, latestWritingEntries, pageCount, plainText, readingMinutes, relatedScore, taxonomySlug } from './publishing-policy';
+import { isPublished, latestWritingEntries, pageCount, plainText, readingMinutes, relatedScore, taxonomySlug, PAGE_SIZE } from './publishing-policy';
 export type PublishingCollection = 'writing' | 'archive' | 'projects';
 export type ArticleEntry = CollectionEntry<PublishingCollection>;
 export const collectionBases = { writing: '/writing/', archive: '/writing/archive/', projects: '/projects/' } as const;
@@ -40,3 +40,24 @@ export async function publicUrls(): Promise<string[]> {
   return [...new Set(urls)];
 }
 export function searchEntry(entry: ArticleEntry) { return { url: articleUrl(entry), title: entry.data.title, description: entry.data.description, category: entry.data.category, tags: entry.data.tags, collection: collectionNames[entry.collection], sample: entry.data.sample, text: plainText(entry.body ?? ''), readingMinutes: readingMinutes(entry.body ?? '') }; }
+
+
+// Readable samples stay available in listings, RSS and local search, but are not
+// promoted as genuine professional publications by search-engine discovery.
+export async function indexableUrls(): Promise<string[]> {
+  const { publicPages } = await import('./crawler-policy');
+  const entries = await publishedEntries();
+  const urls: string[] = [...publicPages, ...entries.filter(entry => !entry.data.sample).map(articleUrl)];
+  for (const collection of ['writing', 'archive', 'projects'] as const) if (entries.some(entry => entry.collection === collection && !entry.data.sample)) urls.push(collectionBases[collection]);
+  for (const field of ['category', 'tags'] as const) for (const group of taxonomies(entries, field)) {
+    const base = `/writing/${field === 'category' ? 'category' : 'tag'}/${group.slug}/`;
+    if (group.entries.some(entry => !entry.data.sample)) urls.push(base);
+    for (let page = 2; page <= pageCount(group.entries.length); page++) if (group.entries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).some(entry => !entry.data.sample)) urls.push(`${base}page/${page}/`);
+  }
+  for (const collection of ['writing', 'archive', 'projects'] as const) {
+    const all = entries.filter(entry => entry.collection === collection);
+    const listing = collection === 'writing' ? latestWritingEntries(all) : all;
+    for (let page = 2; page <= pageCount(listing.length); page++) if (listing.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).some(entry => !entry.data.sample)) urls.push(`${collectionBases[collection]}page/${page}/`);
+  }
+  return [...new Set(urls)];
+}
